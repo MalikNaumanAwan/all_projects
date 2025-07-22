@@ -1,0 +1,20 @@
+app/
+├── api/
+│   ├── routes/
+│   │   └── notes.py           # All endpoints related to notes
+│   └── dependencies.py        # Dependency injection logic
+│
+├── core/
+│   ├── config.py              # Environment & settings management
+│   └── logging_middleware.py  # Logs each request with timing
+│
+├── db/
+│   ├── session.py             # Async SQLAlchemy DB session
+│   ├── models.py              # Notes table definition
+│   └── crud.py                # Create/read/update/delete logic
+│
+├── schemas/
+│   └── notes.py               # Pydantic v2 schemas for validation
+│
+├── main.py                    # Entry point with FastAPI app
+└── lifespan.py                # Lifespan events for DB init/cleanup

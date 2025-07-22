@@ -1,0 +1,34 @@
+{
+  "recommendations": [
+    // Python ecosystem
+    "ms-python.python",
+    "ms-python.black-formatter",
+    "charliermarsh.ruff",
+    "ms-python.isort",
+    "njpwerner.autodocstring",
+
+    // Testing & Coverage
+    "littlefoxteam.vscode-python-test-adapter",
+    "ryanluker.vscode-coverage-gutters",
+
+    // AI assistants
+    "codegpt.codegpt",
+    "continuedev.continue", // optional LLM integration
+
+    // Productivity & Docs
+    "aaron-bond.better-comments",
+    "christian-kohler.path-intellisense",
+    "alefragnani.bookmarks",
+
+    // Version control
+    "eamodio.gitlens",
+    "github.copilot", // if enabled
+
+    // Containerized Dev
+    "ms-azuretools.vscode-docker",
+    "ms-vscode-remote.remote-containers",
+
+    // Jupyter
+    "ms-toolsai.jupyter"
+  ]
+}
