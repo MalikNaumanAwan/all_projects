@@ -1,4 +1,4 @@
-## ✅ Project Title: `resume-job-matcher-rag`
+## ✅ Project: `resume-job-matcher-rag`
 
 **A Resume–Job Description matching engine** using **RAG (Retrieval-Augmented Generation)** powered by **OpenAI, FAISS**, and **FastAPI**.
 
