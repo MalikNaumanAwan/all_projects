@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LangChain JSON Agent</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <div class="min-h-screen flex flex-col items-center justify-center px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">LangChain JSON Agent</h1>
+    <div class="w-full max-w-xl bg-white p-6 rounded-xl shadow">
+      <form id="query-form" class="space-y-4">
+        <label class="block">
+          <span class="text-gray-700 font-medium">Ask something about the JSON data:</span>
+          <input
+            type="text"
+            id="query-input"
+            class="mt-1 block w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="e.g., What is the price of iPhone 14?"
+            required
+          />
+        </label>
+        <button
+          type="submit"
+          class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+        >
+          Submit Query
+        </button>
+      </form>
+
+      <div id="response-container" class="mt-6 p-4 bg-gray-100 rounded-md hidden">
+        <h2 class="text-lg font-semibold mb-2">Agent Response:</h2>
+        <p id="response-text" class="text-gray-700 whitespace-pre-wrap"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
+ 

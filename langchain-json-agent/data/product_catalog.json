@@ -1,0 +1,167 @@
+ {
+  "products": [
+    {
+      "id": "p001",
+      "name": "Apple MacBook Pro 16",
+      "category": "Laptops",
+      "price": 2499.99,
+      "brand": "Apple",
+      "specs": {
+        "processor": "M2 Max",
+        "ram": "32GB",
+        "storage": "1TB SSD",
+        "screen": "16-inch Retina"
+      },
+      "stock": 12
+    },
+    {
+      "id": "p002",
+      "name": "Dell XPS 13 Plus",
+      "category": "Laptops",
+      "price": 1599.99,
+      "brand": "Dell",
+      "specs": {
+        "processor": "Intel i7 13th Gen",
+        "ram": "16GB",
+        "storage": "512GB SSD",
+        "screen": "13.4-inch OLED"
+      },
+      "stock": 5
+    },
+    {
+      "id": "p003",
+      "name": "Samsung Galaxy S24 Ultra",
+      "category": "Smartphones",
+      "price": 1299.99,
+      "brand": "Samsung",
+      "specs": {
+        "processor": "Snapdragon 8 Gen 3",
+        "ram": "12GB",
+        "storage": "256GB",
+        "screen": "6.8-inch AMOLED"
+      },
+      "stock": 24
+    },
+    {
+      "id": "p004",
+      "name": "Sony WH-1000XM5",
+      "category": "Headphones",
+      "price": 399.99,
+      "brand": "Sony",
+      "specs": {
+        "type": "Over-Ear",
+        "noise_cancellation": "Yes",
+        "battery_life": "30 hours"
+      },
+      "stock": 40
+    },
+    {
+      "id": "p005",
+      "name": "Google Pixel 8 Pro",
+      "category": "Smartphones",
+      "price": 999.00,
+      "brand": "Google",
+      "specs": {
+        "processor": "Google Tensor G3",
+        "ram": "12GB",
+        "storage": "128GB",
+        "screen": "6.7-inch OLED"
+      },
+      "stock": 18
+    },
+  {
+      "id": "p001",
+      "name": "Apple MacBook Pro 16",
+      "category": "Laptops",
+      "price": 2499.99,
+      "brand": "Apple",
+      "specs": {
+        "processor": "M3 Max",
+        "ram": "32GB",
+        "storage": "1TB SSD"
+      },
+      "stock": 8
+    },
+    {
+      "id": "p002",
+      "name": "Dell XPS 13 Plus",
+      "category": "Laptops",
+      "price": 1599.99,
+      "brand": "Dell",
+      "specs": {
+        "processor": "Intel Core i7",
+        "ram": "16GB",
+        "storage": "512GB SSD"
+      },
+      "stock": 12
+    },
+    {
+      "id": "p003",
+      "name": "Samsung Galaxy S24 Ultra",
+      "category": "Smartphones",
+      "price": 1299.99,
+      "brand": "Samsung",
+      "specs": {
+        "processor": "Snapdragon 8 Gen 3",
+        "ram": "12GB",
+        "storage": "256GB",
+        "screen": "6.8-inch AMOLED"
+      },
+      "stock": 24
+    },
+    {
+      "id": "p004",
+      "name": "Sony WH-1000XM5",
+      "category": "Headphones",
+      "price": 399.99,
+      "brand": "Sony",
+      "specs": {
+        "type": "Over-Ear",
+        "noise_cancellation": "Yes",
+        "battery_life": "30 hours"
+      },
+      "stock": 40
+    },
+    {
+      "id": "p005",
+      "name": "Google Pixel 8 Pro",
+      "category": "Smartphones",
+      "price": 999.0,
+      "brand": "Google",
+      "specs": {
+        "processor": "Google Tensor G3",
+        "ram": "12GB",
+        "storage": "128GB",
+        "screen": "6.7-inch OLED"
+      },
+      "stock": 18
+    },
+    {
+      "id": "p006",
+      "name": "Asus ROG Zephyrus G14",
+      "category": "Laptops",
+      "price": 1799.99,
+      "brand": "Asus",
+      "specs": {
+        "processor": "AMD Ryzen 9",
+        "ram": "32GB",
+        "storage": "1TB SSD"
+      },
+      "stock": 6
+    },
+    {
+      "id": "p007",
+      "name": "iPhone 15 Pro Max",
+      "category": "Smartphones",
+      "price": 1399.0,
+      "brand": "Apple",
+      "specs": {
+        "processor": "A17 Pro",
+        "ram": "8GB",
+        "storage": "256GB",
+        "screen": "6.7-inch OLED"
+      },
+      "stock": 20
+    }
+  ]
+}
