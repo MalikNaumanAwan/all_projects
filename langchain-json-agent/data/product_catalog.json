@@ -1,167 +1,227 @@
- {
-  "products": [
-    {
-      "id": "p001",
-      "name": "Apple MacBook Pro 16",
-      "category": "Laptops",
-      "price": 2499.99,
-      "brand": "Apple",
-      "specs": {
-        "processor": "M2 Max",
-        "ram": "32GB",
-        "storage": "1TB SSD",
-        "screen": "16-inch Retina"
-      },
-      "stock": 12
-    },
-    {
-      "id": "p002",
-      "name": "Dell XPS 13 Plus",
-      "category": "Laptops",
-      "price": 1599.99,
-      "brand": "Dell",
-      "specs": {
-        "processor": "Intel i7 13th Gen",
-        "ram": "16GB",
-        "storage": "512GB SSD",
-        "screen": "13.4-inch OLED"
-      },
-      "stock": 5
-    },
-    {
-      "id": "p003",
-      "name": "Samsung Galaxy S24 Ultra",
-      "category": "Smartphones",
-      "price": 1299.99,
-      "brand": "Samsung",
-      "specs": {
-        "processor": "Snapdragon 8 Gen 3",
-        "ram": "12GB",
-        "storage": "256GB",
-        "screen": "6.8-inch AMOLED"
-      },
-      "stock": 24
-    },
-    {
-      "id": "p004",
-      "name": "Sony WH-1000XM5",
-      "category": "Headphones",
-      "price": 399.99,
-      "brand": "Sony",
-      "specs": {
-        "type": "Over-Ear",
-        "noise_cancellation": "Yes",
-        "battery_life": "30 hours"
-      },
-      "stock": 40
-    },
-    {
-      "id": "p005",
-      "name": "Google Pixel 8 Pro",
-      "category": "Smartphones",
-      "price": 999.00,
-      "brand": "Google",
-      "specs": {
-        "processor": "Google Tensor G3",
-        "ram": "12GB",
-        "storage": "128GB",
-        "screen": "6.7-inch OLED"
-      },
-      "stock": 18
-    },
+[
   {
-      "id": "p001",
-      "name": "Apple MacBook Pro 16",
-      "category": "Laptops",
-      "price": 2499.99,
-      "brand": "Apple",
-      "specs": {
-        "processor": "M3 Max",
-        "ram": "32GB",
-        "storage": "1TB SSD"
-      },
-      "stock": 8
-    },
-    {
-      "id": "p002",
-      "name": "Dell XPS 13 Plus",
-      "category": "Laptops",
-      "price": 1599.99,
-      "brand": "Dell",
-      "specs": {
-        "processor": "Intel Core i7",
-        "ram": "16GB",
-        "storage": "512GB SSD"
-      },
-      "stock": 12
-    },
-    {
-      "id": "p003",
-      "name": "Samsung Galaxy S24 Ultra",
-      "category": "Smartphones",
-      "price": 1299.99,
-      "brand": "Samsung",
-      "specs": {
-        "processor": "Snapdragon 8 Gen 3",
-        "ram": "12GB",
-        "storage": "256GB",
-        "screen": "6.8-inch AMOLED"
-      },
-      "stock": 24
-    },
-    {
-      "id": "p004",
-      "name": "Sony WH-1000XM5",
-      "category": "Headphones",
-      "price": 399.99,
-      "brand": "Sony",
-      "specs": {
-        "type": "Over-Ear",
-        "noise_cancellation": "Yes",
-        "battery_life": "30 hours"
-      },
-      "stock": 40
-    },
-    {
-      "id": "p005",
-      "name": "Google Pixel 8 Pro",
-      "category": "Smartphones",
-      "price": 999.0,
-      "brand": "Google",
-      "specs": {
-        "processor": "Google Tensor G3",
-        "ram": "12GB",
-        "storage": "128GB",
-        "screen": "6.7-inch OLED"
-      },
-      "stock": 18
-    },
-    {
-      "id": "p006",
-      "name": "Asus ROG Zephyrus G14",
-      "category": "Laptops",
-      "price": 1799.99,
-      "brand": "Asus",
-      "specs": {
-        "processor": "AMD Ryzen 9",
-        "ram": "32GB",
-        "storage": "1TB SSD"
-      },
-      "stock": 6
-    },
-    {
-      "id": "p007",
-      "name": "iPhone 15 Pro Max",
-      "category": "Smartphones",
-      "price": 1399.0,
-      "brand": "Apple",
-      "specs": {
-        "processor": "A17 Pro",
-        "ram": "8GB",
-        "storage": "256GB",
-        "screen": "6.7-inch OLED"
-      },
-      "stock": 20
-    }
-  ]
-}
+    "id": "p001",
+    "name": "Apple MacBook Pro 16",
+    "brand": "Apple",
+    "price": 2499.99,
+    "category": "laptop",
+    "rating": 4.9,
+    "description": "Powerful laptop with M2 Max chip, 16-inch Retina display."
+  },
+  {
+    "id": "p002",
+    "name": "Dell XPS 13 Plus",
+    "brand": "Dell",
+    "price": 1899.99,
+    "category": "laptop",
+    "rating": 4.7,
+    "description": "Ultra-portable laptop with Intel i7 processor and InfinityEdge display."
+  },
+  {
+    "id": "p003",
+    "name": "Samsung Galaxy S24 Ultra",
+    "brand": "Samsung",
+    "price": 1399.99,
+    "category": "phone",
+    "rating": 4.6,
+    "description": "Flagship Android phone with 200MP camera and Snapdragon Gen 3."
+  },
+  {
+    "id": "p004",
+    "name": "Sony WH-1000XM5",
+    "brand": "Sony",
+    "price": 399.99,
+    "category": "headphones",
+    "rating": 4.8,
+    "description": "Industry-leading noise cancellation and superb audio quality."
+  },
+  {
+    "id": "p005",
+    "name": "Google Pixel 8 Pro",
+    "brand": "Google",
+    "price": 999.99,
+    "category": "phone",
+    "rating": 4.5,
+    "description": "Clean Android experience with Tensor G3 and AI-powered photography."
+  },
+  {
+    "id": "p006",
+    "name": "Asus ROG Zephyrus G14",
+    "brand": "Asus",
+    "price": 1699.99,
+    "category": "laptop",
+    "rating": 4.6,
+    "description": "Gaming laptop with Ryzen 9 and RTX 4070 GPU."
+  },
+  {
+    "id": "p007",
+    "name": "iPhone 15 Pro Max",
+    "brand": "Apple",
+    "price": 1199.0,
+    "category": "phone",
+    "rating": 4.9,
+    "description": "Latest flagship iPhone with A17 Pro chip and titanium design."
+  },
+  {
+    "id": "p008",
+    "name": "OnePlus 12",
+    "brand": "OnePlus",
+    "price": 799.0,
+    "category": "phone",
+    "rating": 4.4,
+    "description": "Premium Android phone with fast charging and OxygenOS."
+  },
+  {
+    "id": "p009",
+    "name": "HP Spectre x360",
+    "brand": "HP",
+    "price": 1499.0,
+    "category": "laptop",
+    "rating": 4.3,
+    "description": "2-in-1 laptop with a touch display and long battery life."
+  },
+  {
+    "id": "p010",
+    "name": "Bose QuietComfort Ultra",
+    "brand": "Bose",
+    "price": 379.99,
+    "category": "headphones",
+    "rating": 4.6,
+    "description": "Superb noise-cancelling headphones with spatial audio."
+  },
+  {
+    "id": "p011",
+    "name": "Lenovo ThinkPad X1 Carbon",
+    "brand": "Lenovo",
+    "price": 1699.99,
+    "category": "laptop",
+    "rating": 4.5,
+    "description": "Durable business laptop with lightweight carbon fiber design."
+  },
+  {
+    "id": "p012",
+    "name": "Samsung Galaxy Buds2 Pro",
+    "brand": "Samsung",
+    "price": 229.99,
+    "category": "headphones",
+    "rating": 4.4,
+    "description": "Wireless earbuds with 24-bit audio and active noise canceling."
+  },
+  {
+    "id": "p013",
+    "name": "Nothing Phone 2",
+    "brand": "Nothing",
+    "price": 649.0,
+    "category": "phone",
+    "rating": 4.1,
+    "description": "Minimalist Android phone with transparent back and Glyph interface."
+  },
+  {
+    "id": "p014",
+    "name": "Microsoft Surface Laptop 6",
+    "brand": "Microsoft",
+    "price": 1599.0,
+    "category": "laptop",
+    "rating": 4.2,
+    "description": "Slim, elegant Windows laptop with PixelSense touchscreen."
+  },
+  {
+    "id": "p015",
+    "name": "Beats Studio Pro",
+    "brand": "Beats",
+    "price": 349.0,
+    "category": "headphones",
+    "rating": 4.0,
+    "description": "Stylish wireless headphones with spatial audio and Dolby Atmos."
+  },
+  {
+    "id": "p016",
+    "name": "iPhone 14",
+    "brand": "Apple",
+    "price": 799.0,
+    "category": "phone",
+    "rating": 4.5,
+    "description": "Previous-gen iPhone with strong performance and camera system."
+  },
+  {
+    "id": "p017",
+    "name": "Motorola Edge+ 2023",
+    "brand": "Motorola",
+    "price": 699.0,
+    "category": "phone",
+    "rating": 4.2,
+    "description": "Flagship Motorola phone with edge display and clean Android."
+  },
+  {
+    "id": "p018",
+    "name": "Alienware x16 R1",
+    "brand": "Alienware",
+    "price": 2999.0,
+    "category": "laptop",
+    "rating": 4.7,
+    "description": "High-end gaming laptop with RTX 4090 and 16-inch QHD display."
+  },
+  {
+    "id": "p019",
+    "name": "Sony WF-1000XM5",
+    "brand": "Sony",
+    "price": 299.99,
+    "category": "headphones",
+    "rating": 4.6,
+    "description": "Compact wireless earbuds with adaptive noise cancellation."
+  },
+  {
+    "id": "p020",
+    "name": "Asus Zenbook Duo",
+    "brand": "Asus",
+    "price": 1799.0,
+    "category": "laptop",
+    "rating": 4.4,
+    "description": "Dual-screen productivity laptop with stunning OLED display."
+  },
+  {
+    "id": "p021",
+    "name": "Realme GT 5 Pro",
+    "brand": "Realme",
+    "price": 499.0,
+    "category": "phone",
+    "rating": 4.0,
+    "description": "Affordable flagship killer with Snapdragon 8 Gen 3."
+  },
+  {
+    "id": "p022",
+    "name": "LG Gram 17",
+    "brand": "LG",
+    "price": 1699.0,
+    "category": "laptop",
+    "rating": 4.3,
+    "description": "Ultra-lightweight 17-inch laptop with long battery life."
+  },
+  {
+    "id": "p023",
+    "name": "Sennheiser Momentum 4 Wireless",
+    "brand": "Sennheiser",
+    "price": 379.0,
+    "category": "headphones",
+    "rating": 4.5,
+    "description": "Audiophile-grade headphones with superb clarity and ANC."
+  },
+  {
+    "id": "p024",
+    "name": "Fairphone 5",
+    "brand": "Fairphone",
+    "price": 699.0,
+    "category": "phone",
+    "rating": 4.1,
+    "description": "Ethical, repairable smartphone with sustainable materials."
+  },
+  {
+    "id": "p025",
+    "name": "Acer Swift Go 14",
+    "brand": "Acer",
+    "price": 899.0,
+    "category": "laptop",
+    "rating": 4.0,
+    "description": "Affordable ultrabook with Intel Arc GPU and OLED panel."
+  }
+]

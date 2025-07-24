@@ -6,10 +6,11 @@ load_dotenv()
 class Settings:
     #General
     APP_NAME = os.getenv("APP_NAME", "LangChain JSON Agent")
+    FAISS_INDEX_PATH = os.getenv("FAISS_INDEX_PATH", "./faiss_index")
     # OpenAI & Embeddings
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     MODEL = os.getenv("MODEL", "gpt-4")
-    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
     # PostgreSQL
     POSTGRES_DB = os.getenv("POSTGRES_DB")
     POSTGRES_USER = os.getenv("POSTGRES_USER")
