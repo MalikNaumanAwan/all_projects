@@ -1,4 +1,4 @@
-#main.py
+# main.py
 from fastapi import FastAPI
 from app.api.routes.query import router as query_router
 from main.lifespan import lifespan

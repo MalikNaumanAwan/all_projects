@@ -1,33 +1,43 @@
-from langchain_community.vectorstores import FAISS 
-from langchain_huggingface import HuggingFaceEmbeddings 
-from app.config.settings import settings
-import os
-from functools import lru_cache
-@lru_cache(maxsize=1)
-def is_faiss_index_available(index_path: str) -> bool:
-    return (
-        os.path.exists(index_path)
-        and os.path.isfile(os.path.join(index_path, "index.faiss"))
-        and os.path.isfile(os.path.join(index_path, "index.pkl"))
-    )
+from pathlib import Path
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
+import time
 
-@lru_cache(maxsize=1)
-def get_embedding_model():
-    return HuggingFaceEmbeddings(
-        model_name=settings.EMBEDDING_MODEL,
-        model_kwargs={"device": "cpu"}  # change to "cuda" if available
-    )
+EMBED_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
+VECTOR_STORE_PATH = Path("vector_store")
 
-@lru_cache(maxsize=1)
-def load_or_create_vector_store(text_chunks: list[str]) -> FAISS:
+# Singleton-style persistent embedding model
+_embedding_model = None
+
+
+def get_embedding_model() -> HuggingFaceEmbeddings:
+    global _embedding_model
+    if _embedding_model is None:
+        print("⏳ Loading HuggingFace embedding model...")
+        _embedding_model = HuggingFaceEmbeddings(model_name=EMBED_MODEL_NAME)
+        print("✅ Embedding model loaded.")
+    return _embedding_model
+
+
+def load_or_create_vector_store(texts: list[str]) -> FAISS:
+    start = time.perf_counter()
+    VECTOR_STORE_PATH.mkdir(parents=True, exist_ok=True)
+    index_path = VECTOR_STORE_PATH / "index.faiss"
+
     embedding_model = get_embedding_model()
-    index_path = settings.FAISS_INDEX_PATH
 
-    if is_faiss_index_available(index_path):
-        return FAISS.load_local(index_path, embeddings=embedding_model, allow_dangerous_deserialization=True) 
-        #Do NOT Do This If: You're loading files uploaded by users, You're downloading files from a remote source (like S3, web, etc.),  You aren't sure who created the file
+    if index_path.exists():
+        print("📦 Vector store exists. Loading from disk...")
+        vs = FAISS.load_local(
+            str(VECTOR_STORE_PATH),
+            embeddings=embedding_model,
+            allow_dangerous_deserialization=True,
+        )
     else:
-        vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embedding_model)
-        vectorstore.save_local(index_path) #, safe=True for safety
-        return vectorstore
- 
+        print("⚙️ Creating new FAISS vector store from texts...")
+        vs = FAISS.from_texts(texts, embedding_model)
+        vs.save_local(str(VECTOR_STORE_PATH))
+        print("📁 Vector store saved.")
+
+    print(f"✅ FAISS ready in {time.perf_counter() - start:.2f}s")
+    return vs

@@ -1,19 +1,15 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 from app.core.llm import get_llm  # Async-compatible LLM client
 from app.core.prompts import CLASSIFIER_PROMPT
 import asyncio
+from app.schemas.query import QueryResponse
 
 router = APIRouter()
 
 
-class QueryInput(BaseModel):
-    query: str
-
-
-async def classify_query(input: QueryInput):
+async def classify_query(input: QueryResponse):
     llm = get_llm()
-    prompt = CLASSIFIER_PROMPT.format(query=input.query.strip())
+    prompt = CLASSIFIER_PROMPT.format(query=input.strip())
     response = await llm.ainvoke(prompt)
     print(response.content)
     answer = response.content.strip().lower()
@@ -25,6 +21,6 @@ async def classify_query(input: QueryInput):
 
 # 🔁 Run if script
 if __name__ == "__main__":
-    query = QueryInput(query="what is the weather today?")
+    query = QueryResponse(query="what is the weather today?")
     result = asyncio.run(classify_query(query))
     print(result)

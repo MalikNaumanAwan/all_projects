@@ -10,4 +10,3 @@ def get_llm() -> ChatGroq:
         temperature=0.2,
         max_tokens=1024,
     )
- 
