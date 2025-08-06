@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black text-white">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="h-screen flex flex-col bg-black text-white">
+    <header class="bg-gray-900 text-white px-6 py-4 shadow-md">
+      <h1 class="text-2xl font-bold">AI News Admin Panel</h1>
+    </header>
+
+    <main class="flex flex-1 overflow-hidden">
+      <aside class="w-64 bg-gray-800 border-r border-gray-700 p-4">
+        <nav class="space-y-2">
+          <a
+            href="#"
+            class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-300"
+            >Dashboard</a
+          >
+          <a
+            href="#"
+            class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-300"
+            >Articles</a
+          >
+          <a
+            href="#"
+            class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-300"
+            >LLM Queue</a
+          >
+          <a
+            href="#"
+            class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-300"
+            >Settings</a
+          >
+        </nav>
+      </aside>
+
+      <section class="flex-1 p-6 overflow-y-auto bg-black">
+        <h2 class="text-xl font-semibold text-gray-200 mb-4">
+          Welcome to AI News Automation Dashboard
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="p-4 bg-gray-800 rounded-xl shadow-lg">
+            <h3 class="text-lg font-bold text-indigo-400">Articles Scraped</h3>
+            <p class="text-3xl font-extrabold mt-2 text-white">128</p>
+          </div>
+          <div class="p-4 bg-gray-800 rounded-xl shadow-lg">
+            <h3 class="text-lg font-bold text-indigo-400">LLM Tasks</h3>
+            <p class="text-3xl font-extrabold mt-2 text-white">42</p>
+          </div>
+          <div class="p-4 bg-gray-800 rounded-xl shadow-lg">
+            <h3 class="text-lg font-bold text-indigo-400">
+              Generated Articles
+            </h3>
+            <p class="text-3xl font-extrabold mt-2 text-white">97</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
