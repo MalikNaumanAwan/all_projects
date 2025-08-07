@@ -1,8 +1,7 @@
 # app/groq_client.py
 import os
-import json
 from dotenv import load_dotenv
-from typing import AsyncGenerator, List, Dict
+from typing import List, Dict
 from httpx import AsyncClient
 
 import re
@@ -44,9 +43,9 @@ def fix_common_spacing_issues(text: str) -> str:
     return text
 
 
-async def stream_groq_response(
+async def get_groq_response(
     messages: List[Dict[str, str]], model: str, client: AsyncClient
-) -> AsyncGenerator[str, None]:
+) -> str:
     if model not in VALID_MODELS:
         raise ValueError(f"Invalid model selected: {model}")
 
@@ -55,35 +54,17 @@ async def stream_groq_response(
         "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json",
     }
+
     payload = {
         "model": model,
         "messages": messages,
         "temperature": 0.7,
-        "stream": True,
+        "stream": False,
     }
 
-    full_response = ""
+    response = await client.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+    parsed = response.json()
 
-    async with client.stream("POST", url, headers=headers, json=payload) as response:
-        response.raise_for_status()
-        async for line in response.aiter_lines():
-            if not line.strip().startswith("data:"):
-                continue
-
-            data = line.strip().removeprefix("data:").strip()
-            if data == "[DONE]":
-                break
-
-            parsed = json.loads(data)
-            delta = parsed.get("choices", [])[0].get("delta", {})
-            token = delta.get("content", "")
-            if not token:
-                continue
-
-            full_response += token
-
-    cleaned = fix_common_spacing_issues(full_response)
-
-    # yield in clean chunks
-    yield f"data: {cleaned}\n\n"
-    yield "data: [DONE]\n\n"
+    content = parsed.get("choices", [])[0].get("message", {}).get("content", "")
+    return fix_common_spacing_issues(content)

@@ -73,13 +73,36 @@
           transform: scale(1.2);
         }
       }
+      .chat-box pre {
+        background-color: #1e293b; /* slate-800 */
+        color: #e2e8f0; /* slate-200 */
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        overflow-x: auto;
+      }
+      .chat-box code {
+        background-color: #334155;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+      }
+      .chat-box h1,
+      .chat-box h2,
+      .chat-box h3 {
+        margin-top: 1rem;
+        font-weight: 600;
+      }
+      .chat-box ul {
+        list-style-type: disc;
+        margin-left: 1.5rem;
+      }
     </style>
   </head>
-  <body class="bg-gray-900 text-white h-screen flex flex-col">
-    <!-- Header -->
+  <body
+    class="bg-gray-900 text-white fixed inset-0 flex flex-col overflow-hidden"
+  >
     <!-- Header -->
     <header
-      class="bg-gray-800 shadow-md py-6 px-6 flex flex-col sm:flex-row sm:justify-between items-center space-y-3 sm:space-y-0"
+      class="bg-gray-800 shadow-md py-6 px-6 flex flex-col sm:flex-row sm:justify-between items-center space-y-3 sm:space-y-0 shrink-0"
     >
       <h1 class="text-2xl font-semibold text-white">💬 Groq Chat Assistant</h1>
       <div class="flex gap-4 items-center w-full sm:w-auto">
@@ -153,7 +176,6 @@
           Groq API Key
         </button>
       </div>
-      <!-- Replaces login/profile logic dynamically -->
       <button
         id="login-btn"
         onclick="showAuthModal()"
@@ -161,40 +183,82 @@
       >
         Login
       </button>
+      <div id="profile-menu" class="hidden relative">
+        <button id="profile-btn" class="bg-gray-700 px-3 py-2 rounded text-sm">
+          👤 <span id="profile-email"></span>
+        </button>
+        <div
+          id="profile-dropdown"
+          class="hidden absolute right-0 mt-2 bg-gray-800 border border-gray-700 rounded shadow-lg text-sm z-10"
+        >
+          <button
+            onclick="logout()"
+            class="block w-full px-4 py-2 text-left hover:bg-gray-700"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
     </header>
 
-    <!-- Chat container -->
-    <main class="flex-1 overflow-hidden">
-      <div class="max-w-5xl mx-auto h-full flex flex-col">
-        <!-- Chat messages scroll area -->
+    <!-- Layout split: sidebar + chat area -->
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Sidebar -->
+      <aside
+        class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0 overflow-y-auto"
+      >
         <div
-          id="chat-box"
-          class="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-4xl mx-auto w-full"
+          class="p-4 border-b border-gray-700 flex justify-between items-center"
         >
-          <!-- messages inserted dynamically -->
-        </div>
-
-        <!-- Chat input -->
-        <form
-          id="chat-form"
-          class="flex gap-4 p-4 bg-gray-800 border-t border-gray-700"
-        >
-          <input
-            type="text"
-            id="user-input"
-            class="flex-1 border border-gray-600 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Type your message..."
-            autocomplete="off"
-          />
+          <h2 class="text-lg font-semibold">Chats</h2>
           <button
-            type="submit"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow"
+            onclick="createNewChat()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-sm rounded"
           >
-            Send
+            + New
           </button>
-        </form>
-      </div>
-    </main>
+        </div>
+        <div id="chat-sessions" class="flex-1 p-2 space-y-2">
+          <!-- Chats will be populated here -->
+        </div>
+      </aside>
+
+      <!-- Chat container -->
+      <main class="flex-1 flex flex-col overflow-hidden">
+        <div
+          class="max-w-5xl mx-auto flex flex-col flex-1 overflow-hidden w-full"
+        >
+          <!-- Chat messages scroll area -->
+          <div
+            id="chat-box"
+            class="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-4xl mx-auto w-full"
+          >
+            <!-- messages inserted dynamically -->
+          </div>
+
+          <!-- Chat input -->
+          <form
+            id="chat-form"
+            class="flex gap-4 p-4 bg-gray-800 border-t border-gray-700 w-full shrink-0"
+          >
+            <input
+              type="text"
+              id="user-input"
+              class="flex-1 border border-gray-600 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Type your message..."
+              autocomplete="off"
+            />
+            <button
+              type="submit"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow"
+            >
+              Send
+            </button>
+          </form>
+        </div>
+      </main>
+    </div>
+
     <!-- API Key Modal (Dark Version) -->
     <div
       id="api-key-modal"
@@ -226,6 +290,7 @@
         </div>
       </div>
     </div>
+
     <!-- 🔐 Auth Modal -->
     <div
       id="auth-modal"
@@ -270,48 +335,5 @@
         </div>
       </div>
     </div>
-
-    <!-- 👤 Profile Menu -->
-    <div id="profile-menu" class="hidden relative">
-      <button id="profile-btn" class="bg-gray-700 px-3 py-2 rounded text-sm">
-        👤 <span id="profile-email"></span>
-      </button>
-      <div
-        id="profile-dropdown"
-        class="hidden absolute right-0 mt-2 bg-gray-800 border border-gray-600 rounded shadow-lg text-sm z-10"
-      >
-        <button
-          onclick="logout()"
-          class="block w-full px-4 py-2 text-left hover:bg-gray-700"
-        >
-          Logout
-        </button>
-      </div>
-    </div>
-
-    <style>
-      .chat-box pre {
-        background-color: #1e293b; /* slate-800 */
-        color: #e2e8f0; /* slate-200 */
-        padding: 0.75rem;
-        border-radius: 0.5rem;
-        overflow-x: auto;
-      }
-      .chat-box code {
-        background-color: #334155;
-        padding: 0.2rem 0.4rem;
-        border-radius: 0.25rem;
-      }
-      .chat-box h1,
-      .chat-box h2,
-      .chat-box h3 {
-        margin-top: 1rem;
-        font-weight: 600;
-      }
-      .chat-box ul {
-        list-style-type: disc;
-        margin-left: 1.5rem;
-      }
-    </style>
   </body>
 </html>
