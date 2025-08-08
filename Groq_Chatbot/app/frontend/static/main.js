@@ -3,6 +3,30 @@ const form = document.getElementById("chat-form");
 const input = document.getElementById("user-input");
 const chatBox = document.getElementById("chat-box");
 let sessionId = localStorage.getItem("chat_session_id") || null;
+// Typing effect function
+function fakeStreamText(text, streamBubble, delay = 20) {
+  // defensive: ensure we have a string
+  const fullText = String(text || "");
+  // Initialize raw text area (no markdown parsing while streaming)
+  streamBubble.setRaw("");
+
+  let i = 0;
+  function step() {
+    if (i < fullText.length) {
+      // append one char (you can switch to word-chunks if you prefer)
+      streamBubble.appendRaw(fullText.charAt(i));
+      i++;
+      // keep viewport anchored to bottom
+      scrollToBottom();
+      setTimeout(step, delay);
+    } else {
+      // done: parse markdown and apply syntax highlighting
+      streamBubble.finish();
+      scrollToBottom();
+    }
+  }
+  step();
+}
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -60,7 +84,8 @@ form.addEventListener("submit", async (e) => {
     }
     await fetchAndRenderSessions();
     // 🧠 Update streamed bot response
-    streamBubble.update(data.response);
+    // 🎯 Instead of instantly updating, fake stream it
+    fakeStreamText(data.response, streamBubble, 3);
     scrollToBottom();
   } catch (err) {
     // 💥 Remove broken bot bubble if render failed
@@ -118,27 +143,65 @@ function createStreamedBubble(role) {
   wrapper.className = `w-full flex ${
     role === "user" ? "justify-end" : "justify-start"
   } mb-2`;
+
   const bubble = document.createElement("div");
   bubble.className = `
-            text-sm leading-relaxed px-4 py-2 rounded-2xl max-w-2xl whitespace-pre-wrap break-words shadow
-            ${
-              role === "user"
-                ? "bg-gray-300 text-black rounded-br-none"
-                : "bg-gray-100 text-black rounded-bl-none"
-            }
-          `;
+      relative text-sm leading-relaxed px-4 py-2 rounded-2xl max-w-2xl whitespace-pre-wrap break-words shadow
+      ${
+        role === "user"
+          ? "bg-gray-300 text-black rounded-br-none"
+          : "bg-gray-100 text-black rounded-bl-none"
+      }
+    `;
+
   const contentDiv = document.createElement("div");
   const typingIndicator = document.createElement("div");
   typingIndicator.className = "typing-indicator";
   typingIndicator.innerHTML = "<span></span><span></span><span></span>";
+
   bubble.appendChild(contentDiv);
   bubble.appendChild(typingIndicator);
   wrapper.appendChild(bubble);
+
+  // internal buffer for incremental updates
+  let buffer = "";
+
   return {
     wrapper,
+    // full update (final) — parse markdown & highlight
     update(text) {
+      buffer = text || "";
       typingIndicator.style.display = "none";
-      contentDiv.innerHTML = marked.parse(text);
+      contentDiv.innerHTML = marked.parse(buffer);
+      try {
+        if (window.hljs) hljs.highlightAll();
+      } catch (e) {
+        /* ignore */
+      }
+    },
+    // used to initialize raw stream text (unparsed)
+    setRaw(text) {
+      buffer = text || "";
+      contentDiv.textContent = buffer;
+    },
+    // append raw chunk during fake streaming
+    appendRaw(chunk) {
+      buffer += chunk;
+      contentDiv.textContent = buffer;
+    },
+    // getter for buffer (keeps backwards compatibility)
+    getText() {
+      return buffer;
+    },
+    // finalize streaming: parse markdown & highlight
+    finish() {
+      typingIndicator.style.display = "none";
+      contentDiv.innerHTML = marked.parse(buffer);
+      try {
+        if (window.hljs) hljs.highlightAll();
+      } catch (e) {
+        /* ignore */
+      }
     },
   };
 }
@@ -434,7 +497,9 @@ async function resendMessage(text) {
     }
 
     await fetchAndRenderSessions();
-    streamBubble.update(data.response);
+    // 🧠 Update streamed bot response
+    // 🎯 Instead of instantly updating, fake stream it
+    fakeStreamText(data.response, streamBubble, 3);
     scrollToBottom();
   } catch (err) {
     if (streamBubble?.wrapper?.parentNode) {
