@@ -2,7 +2,7 @@ let currentUserId = null; // 🔐 Global user ID
 const form = document.getElementById("chat-form");
 const input = document.getElementById("user-input");
 const chatBox = document.getElementById("chat-box");
-let sessionId = localStorage.getItem("chat_session_id") || null;
+let currentSessionId = localStorage.getItem("chat_session_id") || null;
 // Typing effect function
 function fakeStreamText(text, streamBubble, delay = 20) {
   // defensive: ensure we have a string
@@ -48,7 +48,7 @@ form.addEventListener("submit", async (e) => {
     const token = localStorage.getItem("token");
 
     // 🔍 Load existing session_id from localStorage if available
-    let sessionId = currentSessionId;
+    //let sessionId = currentSessionId;
 
     const headers = {
       "Content-Type": "application/json",
@@ -63,7 +63,7 @@ form.addEventListener("submit", async (e) => {
       method: "POST",
       headers,
       body: JSON.stringify({
-        session_id: sessionId, // ✅ Send existing or null session_id
+        session_id: currentSessionId, // ✅ Send existing or null session_id
         messages: [{ role: "user", content: text }],
         model: model,
       }),
@@ -77,15 +77,15 @@ form.addEventListener("submit", async (e) => {
     const data = await response.json();
 
     // 💾 If backend returns a session_id, store it in localStorage
-    if (data.session_id && data.session_id !== sessionId) {
-      sessionId = data.session_id;
-      localStorage.setItem("chat_session_id", sessionId);
-      console.log("💾 Stored session_id:", sessionId);
+    if (data.session_id && data.session_id !== currentSessionId) {
+      currentSessionId = data.session_id;
+      localStorage.setItem("chat_session_id", currentSessionId);
+      console.log("💾 Stored session_id:", currentSessionId);
     }
     await fetchAndRenderSessions();
     // 🧠 Update streamed bot response
     // 🎯 Instead of instantly updating, fake stream it
-    fakeStreamText(data.response, streamBubble, 3);
+    fakeStreamText(data.response, streamBubble, 1);
     scrollToBottom();
   } catch (err) {
     // 💥 Remove broken bot bubble if render failed
@@ -251,6 +251,7 @@ async function submitAuth() {
     localStorage.setItem("token", data.access_token);
     hideAuthModal();
     await loadProfile();
+    await fetchAndRenderSessions(true);
   } else {
     alert("Registration successful. You may now login.");
     isLogin = true;
@@ -289,13 +290,16 @@ function logout() {
 }
 
 // Initialize on load
-window.addEventListener("DOMContentLoaded", loadProfile);
+window.addEventListener("DOMContentLoaded", async () => {
+  await loadProfile();
+  // On load, fetch sessions and load first chat session automatically
+  await fetchAndRenderSessions(true);
+});
 
 //*********************RENDER SESSIONS******************************* */
 let chatSessions = [];
-let currentSessionId = null;
 
-async function fetchAndRenderSessions() {
+async function fetchAndRenderSessions(loadFirstSession = false) {
   const token = localStorage.getItem("token");
   if (!token) return;
 
@@ -310,9 +314,26 @@ async function fetchAndRenderSessions() {
   }
 
   const data = await res.json();
-  chatSessions = data.sessions; // ✅ Fix here
+  chatSessions = data.sessions;
   renderSidebarSessions(chatSessions);
+
+  if (loadFirstSession) {
+    // Check currentSessionId validity
+    let validSession = chatSessions.find((s) => s.id === currentSessionId);
+
+    if (!validSession && chatSessions.length > 0) {
+      // No valid session — load first session by default
+      currentSessionId = chatSessions[0].id;
+      localStorage.setItem("chat_session_id", currentSessionId);
+      validSession = chatSessions[0];
+    }
+
+    if (validSession) {
+      await loadChatFromSession(validSession);
+    }
+  }
 }
+
 //***************************************************************** */
 function renderSidebarSessions(sessions) {
   const sidebar = document.getElementById("chat-sessions");
@@ -363,7 +384,7 @@ function renderSidebarSessions(sessions) {
     sidebar.appendChild(container);
   });
 }
-//***************************************************************** */
+//*************************DELETE SESSION**************************************** */
 async function deleteChatSession(sessionId) {
   const token = localStorage.getItem("token");
   if (!token) return alert("You must be logged in.");
@@ -499,7 +520,7 @@ async function resendMessage(text) {
     await fetchAndRenderSessions();
     // 🧠 Update streamed bot response
     // 🎯 Instead of instantly updating, fake stream it
-    fakeStreamText(data.response, streamBubble, 3);
+    fakeStreamText(data.response, streamBubble, 1);
     scrollToBottom();
   } catch (err) {
     if (streamBubble?.wrapper?.parentNode) {

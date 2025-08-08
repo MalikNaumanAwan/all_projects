@@ -52,10 +52,9 @@ async def chat_without_tts(
         session_id: UUID | None = payload.session_id
         user_message = payload.messages[-1].content
 
-        # Step 1: If session_id not provided, create a new chat session
+        # Step 1: If no session_id, create a new one
         if session_id is None:
-            print("Session not recieved. creating session")
-            print("user_id", user.id)
+            print("Session not received. Creating session...")
             new_session = ChatSession(user_id=user.id)
             db.add(new_session)
             await db.commit()
@@ -66,7 +65,7 @@ async def chat_without_tts(
         print("📨 Message received:", user_message)
         print("👤 User ID:", user.id, "| 💬 Session ID:", session_id)
 
-        # Step 2: Save user's message
+        # Step 2: Save the new user's message
         await save_message(
             db=db,
             user_id=user.id,
@@ -75,8 +74,25 @@ async def chat_without_tts(
             content=user_message,
         )
 
-        # Step 3: Build context
-        messages = [
+        # Step 3: Fetch all previous messages for this session
+        result = await db.execute(
+            select(ChatSession)
+            .options(selectinload(ChatSession.messages))
+            .where(ChatSession.id == session_id)
+        )
+        session = result.scalar_one_or_none()
+
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+
+        # Convert DB messages to dict format for LLM
+        previous_messages = [
+            {"role": msg.role, "content": msg.content}
+            for msg in sorted(session.messages, key=lambda m: m.created_at)
+        ]
+
+        # Step 4: Add system prompt at the start
+        messages_for_llm = [
             {
                 "role": "system",
                 "content": (
@@ -84,13 +100,13 @@ async def chat_without_tts(
                     "Use headings, bullet points, and code blocks where needed."
                 ),
             }
-        ] + [m.model_dump() for m in payload.messages]
+        ] + previous_messages
 
-        # Step 4: Get assistant reply from Groq
+        # Step 5: Call LLM with complete conversation
         async with AsyncClient(timeout=None) as client:
-            reply = await get_groq_response(messages, payload.model, client)
+            reply = await get_groq_response(messages_for_llm, payload.model, client)
 
-        # Step 5: Save assistant's response
+        # Step 6: Save assistant's response
         await save_message(
             db=db,
             user_id=user.id,
@@ -98,7 +114,8 @@ async def chat_without_tts(
             role="assistant",
             content=reply,
         )
-        print("Sending Response")
+
+        print("✅ Sending Response")
         return JSONResponse(content={"response": reply, "session_id": str(session_id)})
 
     except Exception as e:

@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from typing import List, Dict
 from httpx import AsyncClient
 
-import re
 
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # Ensure .env uses GROQ_API_KEY
@@ -29,18 +28,6 @@ VALID_MODELS = {
     "moonshotai/kimi-k2-instruct",
     "qwen/qwen3-32b",
 }
-# TTS_MODEL = "playai-tts"
-
-
-def fix_common_spacing_issues(text: str) -> str:
-    replacements = [
-        (r"\bGro q\b", "Groq"),
-        (r"\bcompound -beta\b", "compound-beta"),
-        (r"\bCompound -Beta\b", "Compound-Beta"),
-    ]
-    for pattern, replacement in replacements:
-        text = re.sub(pattern, replacement, text)
-    return text
 
 
 async def get_groq_response(
@@ -64,7 +51,19 @@ async def get_groq_response(
 
     response = await client.post(url, headers=headers, json=payload)
     response.raise_for_status()
+    model_info = {
+        "region": response.headers.get("x-groq-region"),
+        "requests_limit": response.headers.get("x-ratelimit-limit-requests"),
+        "tokens_limit": response.headers.get("x-ratelimit-limit-tokens"),
+        "requests_remaining": response.headers.get("x-ratelimit-remaining-requests"),
+        "tokens_remaining": response.headers.get("x-ratelimit-remaining-tokens"),
+        "requests_reset_in": response.headers.get("x-ratelimit-reset-requests"),
+        "tokens_reset_in": response.headers.get("x-ratelimit-reset-tokens"),
+        "request_id": response.headers.get("x-request-id"),
+    }
+    print("📊 Groq Model: ", model)
+    for k, v in model_info.items():
+        print(f"{k}: {v}")
     parsed = response.json()
-
     content = parsed.get("choices", [])[0].get("message", {}).get("content", "")
     return content

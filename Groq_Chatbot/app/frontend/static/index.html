@@ -16,6 +16,14 @@
       rel="stylesheet"
     />
     <style>
+      body {
+        transform: scale(0.8);
+        transform-origin: top left;
+        /* Prevent scrollbars due to scaling */
+        width: 125%; /* 1 / 0.8 = 1.25 */
+        height: 125%;
+      }
+
       ::-webkit-scrollbar {
         width: 8px;
       }
