@@ -78,19 +78,35 @@ function createBubble(role, content) {
   wrapper.className = `w-full flex ${
     role === "user" ? "justify-end" : "justify-start"
   } mb-2`;
+
   const bubble = document.createElement("div");
   bubble.className = `
-            text-sm leading-relaxed px-4 py-2 rounded-2xl max-w-2xl whitespace-pre-wrap break-words shadow
-            ${
-              role === "user"
-                ? "bg-gray-300 text-black rounded-br-none"
-                : "bg-gray-100 text-black rounded-bl-none"
-            }
-          `;
+      relative text-sm leading-relaxed px-4 py-2 rounded-2xl max-w-2xl whitespace-pre-wrap break-words shadow
+      ${
+        role === "user"
+          ? "bg-gray-300 text-black rounded-br-none"
+          : "bg-gray-100 text-black rounded-bl-none"
+      }
+    `;
+
   bubble.innerHTML = content
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/\n/g, "<br>");
+
+  // 🔄 Add resend button only for user messages
+  if (role === "user") {
+    const resendBtn = document.createElement("button");
+    resendBtn.innerHTML = "↻";
+    resendBtn.title = "Resend message";
+    resendBtn.className =
+      "absolute -left-6 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-black";
+    resendBtn.onclick = () => resendMessage(content);
+
+    wrapper.classList.add("relative"); // so absolute resend button works
+    bubble.appendChild(resendBtn);
+  }
+
   wrapper.appendChild(bubble);
   chatBox.appendChild(wrapper);
   scrollToBottom();
@@ -234,29 +250,79 @@ async function fetchAndRenderSessions() {
   chatSessions = data.sessions; // ✅ Fix here
   renderSidebarSessions(chatSessions);
 }
-
+//***************************************************************** */
 function renderSidebarSessions(sessions) {
   const sidebar = document.getElementById("chat-sessions");
   sidebar.innerHTML = "";
 
   sessions.forEach((session) => {
-    const button = document.createElement("button");
-    button.className =
-      "block w-full text-left px-3 py-2 rounded text-sm border " +
+    // Outer container for chat + menu
+    const container = document.createElement("div");
+    container.className =
+      "relative group flex items-center justify-between px-3 py-2 rounded text-sm border mb-1 " +
       (session.id === currentSessionId
         ? "bg-blue-600 border-blue-500"
         : "bg-gray-800 hover:bg-gray-700 border-gray-700");
 
-    button.textContent = session.title || `Chat ${session.id.slice(0, 6)}`;
-    button.onclick = () => loadChatFromSession(session);
-    sidebar.appendChild(button);
+    // Chat title button (click to load chat)
+    const titleBtn = document.createElement("button");
+    titleBtn.className = "flex-1 text-left";
+    titleBtn.textContent = session.title || `Chat ${session.id.slice(0, 6)}`;
+    titleBtn.onclick = () => loadChatFromSession(session);
+
+    // Three-dot menu button
+    const menuBtn = document.createElement("button");
+    menuBtn.className = "ml-2 text-gray-400 hover:text-white";
+    menuBtn.innerHTML = "&#8942;"; // ⋮ symbol
+    menuBtn.onclick = (e) => {
+      e.stopPropagation(); // Prevent loading chat when clicking dots
+      const dropdown = container.querySelector(".dropdown-menu");
+      dropdown.classList.toggle("hidden");
+    };
+
+    // Dropdown menu
+    const dropdown = document.createElement("div");
+    dropdown.className =
+      "dropdown-menu hidden absolute right-2 top-8 bg-gray-900 border border-gray-700 rounded shadow-lg z-10";
+    dropdown.innerHTML = `
+        <button class="block w-full text-left px-4 py-2 hover:bg-red-600 text-white">Delete Chat</button>
+      `;
+
+    // Delete button action
+    dropdown.querySelector("button").onclick = async () => {
+      await deleteChatSession(session.id);
+      dropdown.classList.add("hidden");
+    };
+
+    container.appendChild(titleBtn);
+    container.appendChild(menuBtn);
+    container.appendChild(dropdown);
+    sidebar.appendChild(container);
   });
 }
 //***************************************************************** */
-function clearChatUI() {
-  const container = document.getElementById("chat-container");
-  if (container) {
-    container.innerHTML = "";
+async function deleteChatSession(sessionId) {
+  const token = localStorage.getItem("token");
+  if (!token) return alert("You must be logged in.");
+
+  const res = await fetch(`${API_BASE}/chat/delete_session/${sessionId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    return alert(err.detail || "Failed to delete chat");
+  }
+
+  // Refresh sidebar after deletion
+  await fetchAndRenderSessions();
+
+  // If the deleted session was open, clear the chat box
+  if (sessionId === currentSessionId) {
+    chatBox.innerHTML = "";
+    currentSessionId = null;
+    localStorage.removeItem("chat_session_id");
   }
 }
 
@@ -264,6 +330,9 @@ function clearChatUI() {
 async function loadChatFromSession(sessionMeta) {
   currentSessionId = sessionMeta.id;
   localStorage.setItem("chat_session_id", currentSessionId);
+
+  // 🔹 Re-render sidebar immediately so highlight changes
+  renderSidebarSessions(chatSessions);
 
   // ✅ CLEAR CHATBOX
   chatBox.innerHTML = "";
@@ -273,7 +342,7 @@ async function loadChatFromSession(sessionMeta) {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     const response = await fetch(
-      `http://localhost:2000/chat/session/${sessionMeta.id}/messages`,
+      `${API_BASE}/chat/session/${sessionMeta.id}/messages`,
       { headers }
     );
 
@@ -325,4 +394,53 @@ async function createNewChat() {
 
   await fetchAndRenderSessions(); // reload sidebar
   loadChatFromSession({ id: data.id, title: data.title }); // ✅ clean & compatible
+}
+//***************************************************************** */
+async function resendMessage(text) {
+  // Render the user bubble again (optional: could highlight instead of duplicating)
+  createBubble("user", text);
+
+  // Prepare bot bubble for streaming
+  const streamBubble = createStreamedBubble("bot");
+  chatBox.appendChild(streamBubble.wrapper);
+  scrollToBottom();
+
+  try {
+    const model = document.getElementById("model-select").value;
+    const token = localStorage.getItem("token");
+
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const response = await fetch("http://localhost:2000/chat", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        session_id: currentSessionId,
+        messages: [{ role: "user", content: text }],
+        model: model,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.session_id && data.session_id !== currentSessionId) {
+      currentSessionId = data.session_id;
+      localStorage.setItem("chat_session_id", currentSessionId);
+    }
+
+    await fetchAndRenderSessions();
+    streamBubble.update(data.response);
+    scrollToBottom();
+  } catch (err) {
+    if (streamBubble?.wrapper?.parentNode) {
+      streamBubble.wrapper.remove();
+    }
+    createBubble("bot", `❌ Error: ${err.message}`);
+    console.error("Resend error:", err);
+  }
 }

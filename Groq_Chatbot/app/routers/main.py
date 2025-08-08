@@ -19,9 +19,6 @@ app.add_middleware(
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # one level up
 STATIC_DIR = os.path.join(BASE_DIR, "frontend", "static")
 
-print("Resolved STATIC_DIR:", STATIC_DIR)
-print("Exists:", os.path.exists(STATIC_DIR))
-
 if not os.path.exists(STATIC_DIR):
     raise RuntimeError(f"Static directory does not exist: {STATIC_DIR}")
 

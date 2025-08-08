@@ -67,4 +67,4 @@ async def get_groq_response(
     parsed = response.json()
 
     content = parsed.get("choices", [])[0].get("message", {}).get("content", "")
-    return fix_common_spacing_issues(content)
+    return content

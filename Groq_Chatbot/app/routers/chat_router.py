@@ -1,7 +1,7 @@
 import traceback
 from pathlib import Path
 from uuid import UUID
-
+from fastapi import status
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from httpx import AsyncClient
@@ -36,7 +36,6 @@ INDEX_PATH = STATIC_DIR / "index.html"
 
 @router.get("/", response_class=HTMLResponse)
 async def index():
-    print("Serving Index at:", INDEX_PATH)
     if not INDEX_PATH.exists():
         raise RuntimeError(f"index.html not found at: {INDEX_PATH}")
     return INDEX_PATH.read_text(encoding="utf-8")
@@ -138,7 +137,6 @@ async def get_user_sessions_with_messages(
                     messages=messages,
                 )  # type: ignore
             )
-        print("session_details index 0: ", session_details[0])
         return UserChatHistory(user_id=user.id, sessions=session_details)
 
     except Exception as e:
@@ -147,6 +145,30 @@ async def get_user_sessions_with_messages(
         return JSONResponse(
             content={"error": "Could not retrieve session history"}, status_code=500
         )
+
+
+@router.delete(
+    "/chat/delete_session/{session_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_chat_session(
+    session_id: UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    print("DELETING CHAT SESSION")
+    result = await db.execute(
+        select(ChatSession).where(
+            ChatSession.id == session_id, ChatSession.user_id == user.id
+        )
+    )
+    session = result.scalar_one_or_none()
+
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    await db.delete(session)
+    await db.commit()
+    return
 
 
 # FastAPI route
