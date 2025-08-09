@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Groq Chat Assistant</title>
-    <script src="/static/main.js" defer></script>
+
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link
       rel="stylesheet"
@@ -15,95 +15,6 @@
       href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
       rel="stylesheet"
     />
-    <style>
-      body {
-        transform: scale(0.8);
-        transform-origin: top left;
-        /* Prevent scrollbars due to scaling */
-        width: 125%; /* 1 / 0.8 = 1.25 */
-        height: 125%;
-      }
-
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #4b5563;
-        border-radius: 8px;
-      }
-      .loader {
-        border: 4px solid #1f2937;
-        border-top: 4px solid #60a5fa;
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        animation: spin 1s linear infinite;
-      }
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-      .typing-indicator {
-        display: inline-flex;
-        gap: 4px;
-        align-items: center;
-        margin-top: 4px;
-      }
-
-      .typing-indicator span {
-        width: 6px;
-        height: 6px;
-        background: #999;
-        border-radius: 50%;
-        animation: blink 1.4s infinite ease-in-out;
-      }
-
-      .typing-indicator span:nth-child(2) {
-        animation-delay: 0.2s;
-      }
-      .typing-indicator span:nth-child(3) {
-        animation-delay: 0.4s;
-      }
-
-      @keyframes blink {
-        0%,
-        80%,
-        100% {
-          opacity: 0.3;
-          transform: scale(0.8);
-        }
-        40% {
-          opacity: 1;
-          transform: scale(1.2);
-        }
-      }
-      .chat-box pre {
-        background-color: #1e293b; /* slate-800 */
-        color: #e2e8f0; /* slate-200 */
-        padding: 0.75rem;
-        border-radius: 0.5rem;
-        overflow-x: auto;
-      }
-      .chat-box code {
-        background-color: #334155;
-        padding: 0.2rem 0.4rem;
-        border-radius: 0.25rem;
-      }
-      .chat-box h1,
-      .chat-box h2,
-      .chat-box h3 {
-        margin-top: 1rem;
-        font-weight: 600;
-      }
-      .chat-box ul {
-        list-style-type: disc;
-        margin-left: 1.5rem;
-      }
-    </style>
   </head>
   <body
     class="bg-gray-900 text-white fixed inset-0 flex flex-col overflow-hidden"
@@ -114,6 +25,7 @@
     >
       <h1 class="text-2xl font-semibold text-white">💬 Groq Chat Assistant</h1>
       <div class="flex gap-4 items-center w-full sm:w-auto">
+        <span>Select Model:</span>
         <select
           id="model-select"
           class="bg-gray-700 text-white px-4 py-2 rounded text-sm w-full max-w-xl"
@@ -177,12 +89,7 @@
             qwen/qwen3-32b – 60 RPM, 1K RPD, 6K TPM, 500K TPD
           </option>
         </select>
-        <button
-          id="api-key-btn"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
-        >
-          Groq API Key
-        </button>
+        <!-- 🔹 Trigger Button -->
       </div>
       <button
         id="login-btn"
@@ -218,6 +125,17 @@
         <div
           class="p-4 border-b border-gray-700 flex justify-between items-center"
         >
+          <!-- New Groq API Key button -->
+          <button
+            id="api-key-btn"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm mt-2"
+          >
+            Add API Key
+          </button>
+        </div>
+        <div
+          class="p-4 border-b border-gray-700 flex justify-between items-center"
+        >
           <h2 class="text-lg font-semibold">Chats</h2>
           <button
             onclick="createNewChat()"
@@ -239,7 +157,7 @@
           <!-- Chat messages scroll area -->
           <div
             id="chat-box"
-            class="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-4xl mx-auto w-full"
+            class="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-5xl mx-auto w-full"
           >
             <!-- messages inserted dynamically -->
           </div>
@@ -267,81 +185,239 @@
       </main>
     </div>
 
-    <!-- API Key Modal (Dark Version) -->
-    <div
-      id="api-key-modal"
-      class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden"
-    >
-      <div
-        class="bg-gray-900 text-white rounded-lg shadow-xl p-6 w-full max-w-md border border-gray-700"
-      >
-        <h2 class="text-lg font-semibold mb-4">Enter Groq API Key</h2>
-        <input
-          type="text"
-          id="api-key-input"
-          placeholder="sk-..."
-          class="w-full bg-gray-800 border border-gray-600 text-white rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <div class="flex justify-end gap-2">
-          <button
-            id="cancel-api-key"
-            class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
-          >
-            Cancel
-          </button>
-          <button
-            id="submit-api-key"
-            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- 🔐 Auth Modal -->
     <div
       id="auth-modal"
-      class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden"
+      class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden"
     >
       <div
-        class="bg-gray-900 text-white rounded-lg shadow-xl p-6 w-full max-w-md border border-gray-700"
+        class="bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-2xl shadow-2xl p-8 w-full max-w-lg border border-gray-700/60"
       >
-        <h2 id="auth-title" class="text-lg font-semibold mb-4">Login</h2>
-        <input
-          type="email"
-          id="auth-email"
-          placeholder="Email"
-          class="w-full bg-gray-800 border border-gray-600 text-white rounded px-3 py-2 mb-2"
-        />
-        <input
-          type="password"
-          id="auth-password"
-          placeholder="Password"
-          class="w-full bg-gray-800 border border-gray-600 text-white rounded px-3 py-2 mb-4"
-        />
-        <div
-          class="flex justify-between items-center text-sm text-gray-400 mb-4"
-        >
-          <span id="auth-toggle" class="cursor-pointer hover:underline"
+        <!-- Modal Header -->
+        <div class="flex justify-between items-center mb-6">
+          <h2 id="auth-title" class="text-xl font-bold tracking-wide">Login</h2>
+          <button
+            onclick="hideAuthModal()"
+            class="text-gray-400 hover:text-gray-200 text-2xl leading-none"
+          >
+            &times;
+          </button>
+        </div>
+
+        <!-- Email Input -->
+        <div class="mb-4">
+          <label
+            for="auth-email"
+            class="block text-sm font-medium mb-2 text-gray-300"
+            >Email</label
+          >
+          <input
+            type="email"
+            id="auth-email"
+            placeholder="Enter your email"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          />
+        </div>
+
+        <!-- Password Input -->
+        <div class="mb-4">
+          <label
+            for="auth-password"
+            class="block text-sm font-medium mb-2 text-gray-300"
+            >Password</label
+          >
+          <input
+            type="password"
+            id="auth-password"
+            placeholder="Enter your password"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          />
+        </div>
+
+        <!-- Toggle Text -->
+        <div class="mb-6 text-sm text-gray-400">
+          <span
+            id="auth-toggle"
+            class="cursor-pointer hover:text-gray-200 transition"
             >No account? Register</span
           >
         </div>
-        <div class="flex justify-end gap-2">
+
+        <!-- Buttons -->
+        <div class="flex justify-end gap-3">
           <button
             onclick="hideAuthModal()"
-            class="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600"
+            class="px-5 py-2 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-700 transition"
           >
             Cancel
           </button>
           <button
             onclick="submitAuth()"
-            class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+            class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-lg transition"
           >
             Submit
           </button>
         </div>
       </div>
     </div>
+
+    <script src="/static/main.js" defer></script>
+    <div
+      id="api-key-modal"
+      class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden"
+    >
+      <div
+        class="bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-2xl shadow-2xl p-8 w-full max-w-lg border border-gray-700/60"
+      >
+        <!-- Modal Header -->
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-xl font-bold tracking-wide">🔑 API Key Settings</h2>
+          <button
+            id="cancel-api-key"
+            class="text-gray-400 hover:text-gray-200 text-2xl leading-none"
+          >
+            &times;
+          </button>
+        </div>
+
+        <!-- Provider Selector -->
+        <div class="mb-5">
+          <label
+            for="select-provider"
+            class="block text-sm font-medium mb-2 text-gray-300"
+          >
+            Select Provider
+          </label>
+          <select
+            id="select-provider"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          >
+            <option value="Groq">Groq</option>
+            <option value="OpenRouter">OpenRouter</option>
+          </select>
+        </div>
+
+        <!-- API Key Input -->
+        <div class="mb-6">
+          <label
+            for="api-key-input"
+            class="block text-sm font-medium mb-2 text-gray-300"
+          >
+            API Key
+          </label>
+          <input
+            type="text"
+            id="api-key-input"
+            placeholder="Paste your API key here..."
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          />
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex justify-end gap-3">
+          <button
+            id="cancel-api-key"
+            class="px-5 py-2 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-700 transition"
+          >
+            Cancel
+          </button>
+          <button
+            id="save-api-key"
+            class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-lg transition"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
   </body>
+  <style>
+    body {
+      transform: scale(0.85);
+      transform-origin: top left;
+      /* Prevent scrollbars due to scaling */
+      width: 117.65%; /* 1 / 0.8 = 1.25 */
+      height: 117.65%;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #4b5563;
+      border-radius: 8px;
+    }
+    .loader {
+      border: 4px solid #1f2937;
+      border-top: 4px solid #60a5fa;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+    .typing-indicator {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .typing-indicator span {
+      width: 6px;
+      height: 6px;
+      background: #999;
+      border-radius: 50%;
+      animation: blink 1.4s infinite ease-in-out;
+    }
+
+    .typing-indicator span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .typing-indicator span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes blink {
+      0%,
+      80%,
+      100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+      }
+      40% {
+        opacity: 1;
+        transform: scale(1.2);
+      }
+    }
+    .chat-box pre {
+      background-color: #1e293b; /* slate-800 */
+      color: #e2e8f0; /* slate-200 */
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+    }
+    .chat-box code {
+      background-color: #334155;
+      padding: 0.2rem 0.4rem;
+      border-radius: 0.25rem;
+    }
+    .chat-box h1,
+    .chat-box h2,
+    .chat-box h3 {
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+    .chat-box ul {
+      list-style-type: disc;
+      margin-left: 1.5rem;
+    }
+  </style>
 </html>

@@ -3,6 +3,12 @@ const form = document.getElementById("chat-form");
 const input = document.getElementById("user-input");
 const chatBox = document.getElementById("chat-box");
 let currentSessionId = localStorage.getItem("chat_session_id") || null;
+// Initialize on load
+window.addEventListener("DOMContentLoaded", async () => {
+  await loadProfile();
+  // On load, fetch sessions and load first chat session automatically
+  await fetchAndRenderSessions(true);
+});
 // Typing effect function
 function fakeStreamText(text, streamBubble, delay = 20) {
   // defensive: ensure we have a string
@@ -27,6 +33,70 @@ function fakeStreamText(text, streamBubble, delay = 20) {
   }
   step();
 }
+document.addEventListener("DOMContentLoaded", () => {
+  const apiKeyBtn = document.getElementById("api-key-btn");
+  const apiKeyModal = document.getElementById("api-key-modal");
+  const cancelApiKeyButtons = document.querySelectorAll("#cancel-api-key");
+  const saveApiKey = document.getElementById("save-api-key");
+
+  if (apiKeyBtn && apiKeyModal) {
+    apiKeyBtn.addEventListener("click", () => {
+      apiKeyModal.classList.remove("hidden");
+    });
+  }
+
+  // Multiple cancel buttons with same ID? Better to use querySelectorAll:
+  cancelApiKeyButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      apiKeyModal.classList.add("hidden");
+    });
+  });
+
+  if (saveApiKey && apiKeyModal) {
+    saveApiKey.addEventListener("click", async () => {
+      const key = document.getElementById("api-key-input").value.trim();
+      const provider = document.getElementById("select-provider").value;
+      const token = localStorage.getItem("token");
+      if (!key) {
+        alert("Please enter a valid API key.");
+        return;
+      }
+      const headers = {
+        "Content-Type": "application/json",
+      };
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      try {
+        const response = await fetch("http://localhost:2000/save_api_key", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ api_provider: provider, api_key: key }),
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          alert(`Failed to save API key: ${err.detail || response.statusText}`);
+          return;
+        }
+
+        apiKeyModal.classList.add("hidden");
+        alert("API key saved successfully.");
+      } catch (error) {
+        alert("Network error while saving API key.");
+        console.error(error);
+      }
+    });
+  }
+
+  apiKeyModal.addEventListener("click", (e) => {
+    if (e.target === apiKeyModal) {
+      apiKeyModal.classList.add("hidden");
+    }
+  });
+});
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -106,7 +176,7 @@ function createBubble(role, content) {
 
   const bubble = document.createElement("div");
   bubble.className = `
-      relative text-sm leading-relaxed px-4 py-2 rounded-2xl max-w-2xl whitespace-pre-wrap break-words shadow
+      relative text-sm leading-relaxed px-4 py-2 rounded-2xl max-w-4xl break-words shadow
       ${
         role === "user"
           ? "bg-gray-300 text-black rounded-br-none"
@@ -114,10 +184,9 @@ function createBubble(role, content) {
       }
     `;
 
-  bubble.innerHTML = content
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\n/g, "<br>");
+  bubble.innerHTML = `<div class="bubble-content">${marked.parse(
+    content
+  )}</div>`;
 
   // 🔄 Add resend button only for user messages
   if (role === "user") {
@@ -146,7 +215,7 @@ function createStreamedBubble(role) {
 
   const bubble = document.createElement("div");
   bubble.className = `
-      relative text-sm leading-relaxed px-4 py-2 rounded-2xl max-w-2xl whitespace-pre-wrap break-words shadow
+      relative text-sm leading-relaxed px-4 py-2 rounded-2xl max-w-2xl break-words shadow
       ${
         role === "user"
           ? "bg-gray-300 text-black rounded-br-none"
@@ -288,14 +357,6 @@ function logout() {
   localStorage.removeItem("token");
   location.reload();
 }
-
-// Initialize on load
-window.addEventListener("DOMContentLoaded", async () => {
-  await loadProfile();
-  // On load, fetch sessions and load first chat session automatically
-  await fetchAndRenderSessions(true);
-});
-
 //*********************RENDER SESSIONS******************************* */
 let chatSessions = [];
 

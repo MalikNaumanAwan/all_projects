@@ -15,6 +15,7 @@ from app.auth.schemas import (
     ChatSessionOut,
     ChatSessionCreate,
     ChatSessionWithMessages,
+    UserApiKey,
 )
 from app.db.crud import save_message
 from app.db.dependencies import get_db
@@ -39,6 +40,23 @@ async def index():
     if not INDEX_PATH.exists():
         raise RuntimeError(f"index.html not found at: {INDEX_PATH}")
     return INDEX_PATH.read_text(encoding="utf-8")
+
+
+@router.post("/save_api_key")
+async def save_api_key(
+    payload: UserApiKey,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        print("User: ", user.id)
+        print("Provider:", payload.api_provider)
+        print("Api Key: ", payload.api_key)
+        return JSONResponse(content={"Success": "key Added"})
+    except Exception as e:
+        print("❌ Exception occurred during /save_api_key:")
+        traceback.print_exc()
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
 @router.post("/chat")

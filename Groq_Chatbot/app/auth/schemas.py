@@ -27,6 +27,11 @@ class Message(BaseModel):
     content: str
 
 
+class UserApiKey(BaseModel):
+    api_provider: str
+    api_key: str
+
+
 class ChatPayload(BaseModel):
     session_id: UUID | None = None
     messages: List[Message]
