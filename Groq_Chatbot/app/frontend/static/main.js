@@ -10,29 +10,31 @@ window.addEventListener("DOMContentLoaded", async () => {
   await fetchAndRenderSessions(true);
 });
 // Typing effect function
-function fakeStreamText(text, streamBubble, delay = 20) {
-  // defensive: ensure we have a string
-  const fullText = String(text || "");
-  // Initialize raw text area (no markdown parsing while streaming)
+function fakeStreamText(text, streamBubble, baseDelay = 20) {
+  const words = text.split(/(\s+)/); // Keep whitespace as tokens
   streamBubble.setRaw("");
 
-  let i = 0;
+  let index = 0;
+
   function step() {
-    if (i < fullText.length) {
-      // append one char (you can switch to word-chunks if you prefer)
-      streamBubble.appendRaw(fullText.charAt(i));
-      i++;
-      // keep viewport anchored to bottom
+    if (index < words.length) {
+      streamBubble.appendRaw(words[index]);
+      index++;
+
+      // Adjust delay based on remaining length (faster towards the end)
+      const progress = index / words.length;
+      const dynamicDelay = baseDelay * (1 - 0.99 * progress); // Speed up 99%
+
       scrollToBottom();
-      setTimeout(step, delay);
+      setTimeout(step, dynamicDelay);
     } else {
-      // done: parse markdown and apply syntax highlighting
       streamBubble.finish();
       scrollToBottom();
     }
   }
   step();
 }
+
 document.addEventListener("DOMContentLoaded", () => {
   const apiKeyBtn = document.getElementById("api-key-btn");
   const apiKeyModal = document.getElementById("api-key-modal");
@@ -180,7 +182,7 @@ function createBubble(role, content) {
       ${
         role === "user"
           ? "bg-gray-300 text-black rounded-br-none"
-          : "bg-gray-100 text-black rounded-bl-none"
+          : "bg-gray-200 text-black rounded-bl-none"
       }
     `;
 
@@ -219,7 +221,7 @@ function createStreamedBubble(role) {
       ${
         role === "user"
           ? "bg-gray-300 text-black rounded-br-none"
-          : "bg-gray-100 text-black rounded-bl-none"
+          : "bg-gray-200 text-black rounded-bl-none"
       }
     `;
 
@@ -300,6 +302,16 @@ document.getElementById("auth-toggle").onclick = () => {
     ? "No account? Register"
     : "Have account? Login";
 };
+document.addEventListener("DOMContentLoaded", () => {
+  const authModal = document.getElementById("auth-modal");
+
+  // Add click listener on backdrop to close modal if clicked outside modal content
+  authModal.addEventListener("click", (e) => {
+    if (e.target === authModal) {
+      authModal.classList.add("hidden");
+    }
+  });
+});
 
 async function submitAuth() {
   const email = document.getElementById("auth-email").value;
