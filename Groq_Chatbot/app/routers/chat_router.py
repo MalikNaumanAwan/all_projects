@@ -9,19 +9,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from app.auth.authentication import get_current_user
-from app.auth.models import ChatSession, User
+from app.auth.models import ChatSession, User, UserApiKey
 from app.auth.schemas import (
     ChatPayload,
     ChatSessionOut,
     ChatSessionCreate,
     ChatSessionWithMessages,
-    UserApiKey,
+    UserApiKeyIn,
 )
 from app.db.crud import save_message
 from app.db.dependencies import get_db
 from app.groq_client import get_groq_response
 from sqlalchemy import select
-
+from sqlalchemy.exc import IntegrityError
 from app.auth.schemas import ChatMessageOut, ChatSessionDetail, UserChatHistory
 
 router = APIRouter()
@@ -44,19 +44,31 @@ async def index():
 
 @router.post("/save_api_key")
 async def save_api_key(
-    payload: UserApiKey,
+    payload: UserApiKeyIn,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     try:
-        print("User: ", user.id)
-        print("Provider:", payload.api_provider)
-        print("Api Key: ", payload.api_key)
-        return JSONResponse(content={"Success": "key Added"})
-    except Exception as e:
+        new_key = UserApiKey(
+            user_id=user.id,
+            api_provider=payload.api_provider,
+            api_key=payload.api_key,
+        )
+        db.add(new_key)
+        await db.commit()
+        return JSONResponse(content={"success": "API key added successfully"})
+    except IntegrityError:
+        await db.rollback()
+        # Likely duplicate api_key violation
+        return JSONResponse(
+            content={"detail": "API key already exists."},
+            status_code=400,
+        )
+    except Exception:
+        await db.rollback()
         print("❌ Exception occurred during /save_api_key:")
         traceback.print_exc()
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        return JSONResponse(content={"error": "Internal server error"}, status_code=500)
 
 
 @router.post("/chat")

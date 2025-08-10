@@ -27,7 +27,7 @@ class Message(BaseModel):
     content: str
 
 
-class UserApiKey(BaseModel):
+class UserApiKeyIn(BaseModel):
     api_provider: str
     api_key: str
 

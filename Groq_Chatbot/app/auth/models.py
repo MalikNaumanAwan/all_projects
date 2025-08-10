@@ -18,11 +18,33 @@ class User(Base):
     )
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    api_keys: Mapped[List["UserApiKey"]] = relationship(
+        "UserApiKey", back_populates="user", cascade="all, delete-orphan"
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     chat_sessions: Mapped[List["ChatSession"]] = relationship(
         "ChatSession", back_populates="user"
     )
+
+
+class UserApiKey(Base):
+    __tablename__ = "user_api_keys"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    api_provider: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    api_key: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    user: Mapped["User"] = relationship("User", back_populates="api_keys")
 
 
 class ChatSession(Base):
