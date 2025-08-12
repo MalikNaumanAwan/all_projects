@@ -101,3 +101,20 @@ class ChatMessageSchema(BaseModel):
     session_id: UUID | None = None
     role: str
     content: str
+
+
+class AIModelBase(BaseModel):
+    provider: str
+    model_id: str
+
+
+class AIModelCreate(AIModelBase):
+    pass
+
+
+class AIModelRead(AIModelBase):
+    id: int
+
+    model_config = {
+        "from_attributes": True  # Enables reading directly from SQLAlchemy objects
+    }

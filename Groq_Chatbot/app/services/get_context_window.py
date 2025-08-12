@@ -2,42 +2,53 @@ import os
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
+def test_openrouter_model(model_id: str):
+    # Load API key from .env
+    load_dotenv()
+    MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 
-def fetch_all_model_limits():
-    url = "https://api.groq.com/openai/v1/models"
-    headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+    if not MISTRAL_API_KEY:
+        raise ValueError("❌ OPENROUTER_API_KEY not found in .env file")
 
-    resp = requests.get(url, headers=headers)
-    resp.raise_for_status()
-    models = resp.json().get("data", [])
+    # Endpoint
+    url = "https://api.mistral.ai/v1/chat/completions"
 
-    records = []
-    for m in models:
-        records.append(
+    # Request payload
+    payload = {
+        "model": model_id,
+        "messages": [
             {
-                "model_id": m.get("id"),
-                "owned_by": m.get("owned_by"),
-                "context_window": m.get("context_window"),
-                "max_completion_tokens": m.get("max_completion_tokens"),
-                "active": m.get("active"),
-                "created": m.get("created"),
+                "role": "user",
+                "content": "tell me a joke",
             }
-        )
-    return records
+        ],
+        "max_tokens": 1000,
+    }
+
+    headers = {
+        "Authorization": f"Bearer {MISTRAL_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
+    # Send request
+    response = requests.post(url, headers=headers, json=payload)
+
+    # Print full response headers
+    print("\n=== Response Headers ===")
+    for k, v in response.headers.items():
+        print(f"{k}: {v}")
+
+    # Also print body for context
+    print("\n=== Response Body ===")
+    print(response.text)
 
 
-def save_to_excel(data, filename="groq_model_limits.xlsx"):
-    df = pd.DataFrame(data)
-    df.to_excel(filename, index=False)
-    print(f"✅ Model limits saved to {filename}")
+def main():
+    # Pick a test model
+    model_id = "voxtral-small-latest"
+    test_openrouter_model(model_id)
 
 
 if __name__ == "__main__":
-    if not GROQ_API_KEY:
-        raise EnvironmentError("Please set the GROQ_API_KEY environment variable.")
-
-    model_data = fetch_all_model_limits()
-    save_to_excel(model_data)
+    main()

@@ -28,6 +28,18 @@ class User(Base):
     )
 
 
+class AIModel(Base):
+    __tablename__ = "ai_models"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
+    provider: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # "Groq" / "Mistral"
+    model_id: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True
+    )  # API model identifier
+
+
 class UserApiKey(Base):
     __tablename__ = "user_api_keys"
 

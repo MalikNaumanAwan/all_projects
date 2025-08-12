@@ -8,6 +8,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   await loadProfile();
   // On load, fetch sessions and load first chat session automatically
   await fetchAndRenderSessions(true);
+  await fetchAndRenderModels(true);
 });
 // Typing effect function
 function fakeStreamText(text, streamBubble, baseDelay = 20) {
@@ -333,6 +334,7 @@ async function submitAuth() {
     hideAuthModal();
     await loadProfile();
     await fetchAndRenderSessions(true);
+    await fetchAndRenderModels(); // ⬅ fetch models right after login
   } else {
     alert("Registration successful. You may now login.");
     isLogin = true;
@@ -363,6 +365,7 @@ async function loadProfile() {
   profileBtn.onclick = () => dropdown.classList.toggle("hidden");
 
   await fetchAndRenderSessions(); // 🔥 fetch sessions on login
+  await fetchAndRenderModels();
 }
 
 function logout() {
@@ -603,3 +606,68 @@ async function resendMessage(text) {
     console.error("Resend error:", err);
   }
 }
+//***************************Render Models**************************** */
+async function fetchAndRenderModels() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    console.warn("No token found — skipping model fetch.");
+    return;
+  }
+
+  const selectEl = document.getElementById("model-select");
+  if (!selectEl) {
+    console.error("Model select element not found in DOM.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/get_models`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      console.error(`Failed to fetch models: ${res.status}`);
+      selectEl.innerHTML = `<option disabled>Failed to load models</option>`;
+      return;
+    }
+
+    const payload = await res.json();
+
+    // Normalize payload to an array
+    const models = Array.isArray(payload)
+      ? payload
+      : payload.models || payload.data || [];
+
+    if (!models.length) {
+      selectEl.innerHTML = `<option disabled>No models available</option>`;
+      return;
+    }
+
+    const lastSelectedModel = localStorage.getItem("selected_model_id");
+    selectEl.innerHTML = ""; // Clear previous
+
+    models.forEach((m) => {
+      const id = m.model_id ?? m.id ?? "";
+      const provider = m.provider ?? "unknown";
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = `${id} – ${provider}`;
+      if (lastSelectedModel && id === lastSelectedModel) {
+        opt.selected = true;
+      }
+      selectEl.appendChild(opt);
+    });
+
+    // Save selection on change
+    selectEl.addEventListener("change", () => {
+      const selectedId = selectEl.value;
+      localStorage.setItem("selected_model_id", selectedId);
+    });
+  } catch (err) {
+    console.error("Error fetching models:", err);
+    selectEl.innerHTML = `<option disabled>Error loading models</option>`;
+  }
+}
+
+// Call after DOM is ready
+document.addEventListener("DOMContentLoaded", fetchAndRenderModels);

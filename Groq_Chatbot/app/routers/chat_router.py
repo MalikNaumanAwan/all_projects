@@ -1,5 +1,6 @@
 import traceback
 from pathlib import Path
+from typing import List
 from uuid import UUID
 from fastapi import status
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,19 +10,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from app.auth.authentication import get_current_user
-from app.auth.models import ChatSession, User, UserApiKey
+from app.auth.models import AIModel, ChatSession, User, UserApiKey
 from app.auth.schemas import (
     ChatPayload,
     ChatSessionOut,
     ChatSessionCreate,
     ChatSessionWithMessages,
     UserApiKeyIn,
+    AIModelRead,
 )
 from app.db.crud import save_message
 from app.db.dependencies import get_db
-from app.groq_client import get_groq_response
+from app.groq_client import get_model_response
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.auth.schemas import ChatMessageOut, ChatSessionDetail, UserChatHistory
 
 router = APIRouter()
@@ -140,7 +142,10 @@ async def chat_without_tts(
 
         # Step 5: Call LLM with complete conversation
         async with AsyncClient(timeout=None) as client:
-            reply = await get_groq_response(messages_for_llm, payload.model, client)
+            print("DEBUG call:", payload.model)
+            reply = await get_model_response(
+                messages_for_llm, payload.model, db, client
+            )
 
         # Step 6: Save assistant's response
         await save_message(
@@ -258,3 +263,26 @@ async def get_session_messages(session_id: UUID, db: AsyncSession = Depends(get_
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return session  # ✅ messages now loaded eagerly
+
+
+@router.get("/get_models", response_model=List[AIModelRead])
+async def get_models(
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),  # ✅ Require login
+):
+    try:
+        result = await db.execute(select(AIModel))
+        models = result.scalars().all()
+        return models
+    except SQLAlchemyError as e:
+        print(f"❌ Database error while fetching models: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch models from the database.",
+        ) from e
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        ) from e
