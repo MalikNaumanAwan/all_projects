@@ -262,7 +262,14 @@ async def get_session_messages(session_id: UUID, db: AsyncSession = Depends(get_
     session = result.scalar_one_or_none()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    return session  # ✅ messages now loaded eagerly
+
+    # 🔹 Sort messages by created_at (ascending)
+    sorted_messages = sorted(session.messages, key=lambda m: m.created_at)
+
+    # 🔹 Replace with sorted list so response_model gets them in order
+    session.messages = sorted_messages
+
+    return session
 
 
 @router.get("/get_models", response_model=List[AIModelRead])

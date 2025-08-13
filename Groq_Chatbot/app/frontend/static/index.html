@@ -95,12 +95,12 @@
       <!-- Chat container -->
       <main class="flex-1 flex flex-col overflow-hidden">
         <div
-          class="max-w-5xl mx-auto flex flex-col flex-1 overflow-hidden w-full"
+          class="max-w-6xl mx-auto flex flex-col flex-1 overflow-hidden w-full"
         >
           <!-- Chat messages scroll area -->
           <div
             id="chat-box"
-            class="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-5xl mx-auto w-full"
+            class="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-6xl mx-auto w-full"
           >
             <!-- messages inserted dynamically -->
           </div>
@@ -366,6 +366,18 @@
     .chat-box ul {
       list-style-type: disc;
       margin-left: 1.5rem;
+    }
+    .bubble-content {
+      overflow-wrap: break-word;
+      word-break: break-word;
+      overflow-y: auto;
+      max-height: auto;
+    }
+
+    .content-wrapper {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   </style>
 </html>

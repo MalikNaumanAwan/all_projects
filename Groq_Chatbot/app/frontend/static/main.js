@@ -170,7 +170,7 @@ form.addEventListener("submit", async (e) => {
     console.error("Chat error:", err);
   }
 });
-
+//***************************CREATE BUBBLE*********************************** */
 function createBubble(role, content) {
   const wrapper = document.createElement("div");
   wrapper.className = `w-full flex ${
@@ -178,18 +178,21 @@ function createBubble(role, content) {
   } mb-2`;
 
   const bubble = document.createElement("div");
-  bubble.className = `
-      relative text-sm leading-relaxed px-4 py-2 rounded-2xl max-w-4xl break-words shadow
-      ${
-        role === "user"
-          ? "bg-gray-300 text-black rounded-br-none"
-          : "bg-gray-200 text-black rounded-bl-none"
-      }
-    `;
+  bubble.className = `relative text-sm leading-relaxed px-4 py-2 rounded-2xl max-w-4xl break-words shadow ${
+    role === "user"
+      ? "bg-gray-700 text-white rounded-br-none"
+      : "bg-gray-800 text-white rounded-bl-none"
+  }`;
 
-  bubble.innerHTML = `<div class="bubble-content">${marked.parse(
-    content
-  )}</div>`;
+  const contentDiv = document.createElement("div");
+  contentDiv.className = "bubble-content";
+  contentDiv.innerHTML = marked.parse(content);
+
+  const contentWrapper = document.createElement("div");
+  contentWrapper.className = "content-wrapper";
+  contentWrapper.appendChild(contentDiv);
+
+  bubble.appendChild(contentWrapper);
 
   // 🔄 Add resend button only for user messages
   if (role === "user") {
@@ -207,9 +210,10 @@ function createBubble(role, content) {
   wrapper.appendChild(bubble);
   chatBox.appendChild(wrapper);
   scrollToBottom();
+
   return wrapper;
 }
-
+//***************************CREATE STREAMED BUBBLE*********************************** */
 function createStreamedBubble(role) {
   const wrapper = document.createElement("div");
   wrapper.className = `w-full flex ${
@@ -217,21 +221,24 @@ function createStreamedBubble(role) {
   } mb-2`;
 
   const bubble = document.createElement("div");
-  bubble.className = `
-      relative text-sm leading-relaxed px-4 py-2 rounded-2xl max-w-2xl break-words shadow
-      ${
-        role === "user"
-          ? "bg-gray-300 text-black rounded-br-none"
-          : "bg-gray-200 text-black rounded-bl-none"
-      }
-    `;
+  bubble.className = `relative text-sm leading-relaxed px-4 py-2 rounded-2xl max-w-4xl break-words shadow ${
+    role === "user"
+      ? "bg-gray-700 text-white rounded-br-none"
+      : "bg-gray-800 text-white rounded-bl-none"
+  }`;
 
   const contentDiv = document.createElement("div");
+  contentDiv.className = "bubble-content";
+
+  const contentWrapper = document.createElement("div");
+  contentWrapper.className = "content-wrapper";
+  contentWrapper.appendChild(contentDiv);
+
   const typingIndicator = document.createElement("div");
   typingIndicator.className = "typing-indicator";
   typingIndicator.innerHTML = "<span></span><span></span><span></span>";
 
-  bubble.appendChild(contentDiv);
+  bubble.appendChild(contentWrapper);
   bubble.appendChild(typingIndicator);
   wrapper.appendChild(bubble);
 
@@ -313,7 +320,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-
+//*************************** LOGIN *********************************** */
 async function submitAuth() {
   const email = document.getElementById("auth-email").value;
   const password = document.getElementById("auth-password").value;
@@ -342,7 +349,7 @@ async function submitAuth() {
     document.getElementById("auth-toggle").innerText = "No account? Register";
   }
 }
-
+//*************************** LOAD PROFILE*********************************** */
 async function loadProfile() {
   const token = localStorage.getItem("token");
   if (!token) return;
