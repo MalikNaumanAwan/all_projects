@@ -11,12 +11,14 @@ async def save_message(
     session_id: UUID,
     role: str,
     content: str,
+    res_model: str,
 ):
     message = ChatMessage(
         user_id=user_id,
         session_id=session_id,
         role=role,
         content=content,
+        model=res_model,
     )
     db.add(message)
     await db.commit()

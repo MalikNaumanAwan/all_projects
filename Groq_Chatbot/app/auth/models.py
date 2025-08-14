@@ -94,7 +94,9 @@ class ChatMessage(Base):
     role: Mapped[str] = mapped_column(String)
     content: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
+    model: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True, default="Untitled Session"
+    )
     session: Mapped["ChatSession"] = relationship(
         "ChatSession", back_populates="messages"
     )

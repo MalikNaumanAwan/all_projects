@@ -36,6 +36,7 @@ class ChatPayload(BaseModel):
     session_id: UUID | None = None
     messages: List[Message]
     model: str
+    web_search: bool = False
 
 
 class ChatRequest(BaseModel):
@@ -72,6 +73,7 @@ class ChatMessageOut(BaseModel):
     role: str
     content: str
     created_at: datetime
+    model: str
 
 
 class ChatSessionWithMessages(BaseModel):

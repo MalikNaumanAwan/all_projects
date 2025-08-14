@@ -23,8 +23,11 @@
     <header
       class="bg-gray-800 shadow-md py-6 px-6 flex flex-col sm:flex-row sm:justify-between items-center space-y-3 sm:space-y-0 shrink-0"
     >
-      <h1 class="text-2xl font-semibold text-white">💬 Groq Chat Assistant</h1>
-      <div class="flex gap-4 items-center w-full sm:w-auto">
+      <h1 class="text-2xl font-semibold text-white">💬 Chat Assistant</h1>
+      <div
+        id="model-container"
+        class="flex gap-4 items-center w-full sm:w-auto"
+      >
         <span>Model:</span>
         <select
           id="model-select"
@@ -108,8 +111,17 @@
           <!-- Chat input -->
           <form
             id="chat-form"
-            class="flex gap-4 p-4 bg-gray-800 border-t border-gray-700 w-full shrink-0"
+            class="flex gap-4 p-4 bg-gray-800 border-t border-gray-700 max-w-5xl shrink-0 items-center"
           >
+            <!-- Web Search Toggle -->
+            <label class="flex items-center gap-2 text-gray-300 text-sm">
+              <input
+                type="checkbox"
+                id="web-search-toggle"
+                class="w-4 h-4 accent-blue-600"
+              />
+              Web Search
+            </label>
             <input
               type="text"
               id="user-input"
@@ -117,6 +129,7 @@
               placeholder="Type your message..."
               autocomplete="off"
             />
+
             <button
               type="submit"
               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow"
@@ -236,7 +249,7 @@
             class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
           >
             <option value="Groq">Groq</option>
-            <option value="OpenRouter">OpenRouter</option>
+            <option value="Mistral">Mistral</option>
           </select>
         </div>
 
@@ -378,6 +391,23 @@
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .bubble-content h1 {
+      font-size: 1.5rem; /* ~24px */
+      font-weight: bold;
+      margin: 0.5em 0;
+    }
+
+    .bubble-content h2 {
+      font-size: 1.25rem; /* ~20px */
+      font-weight: bold;
+      margin: 0.5em 0;
+    }
+
+    .bubble-content h3 {
+      font-size: 1.125rem; /* ~18px */
+      font-weight: 600;
+      margin: 0.5em 0;
     }
   </style>
 </html>

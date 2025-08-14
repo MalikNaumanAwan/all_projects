@@ -19,6 +19,7 @@ from app.auth.schemas import (
     UserApiKeyIn,
     AIModelRead,
 )
+from app.services.web_search import web_search_serper, build_search_augmented_prompt
 from app.db.crud import save_message
 from app.db.dependencies import get_db
 from app.groq_client import get_model_response
@@ -84,7 +85,7 @@ async def chat_without_tts(
         session_id: UUID | None = payload.session_id
         user_message = payload.messages[-1].content
 
-        # Step 1: If no session_id, create a new one
+        # Step 1: Create session if needed
         if session_id is None:
             print("Session not received. Creating session...")
             new_session = ChatSession(user_id=user.id)
@@ -96,68 +97,114 @@ async def chat_without_tts(
 
         print("📨 Message received:", user_message)
         print("👤 User ID:", user.id, "| 💬 Session ID:", session_id)
+        print("🌐 Web Search Enabled:", getattr(payload, "web_search", False))
 
-        # Step 2: Save the new user's message
+        # Step 2: Save user's message
         await save_message(
             db=db,
             user_id=user.id,
             session_id=session_id,
             role="user",
             content=user_message,
+            res_model="",
         )
 
-        # Step 3: Fetch all previous messages for this session
+        # Step 3: Fetch previous session messages
         result = await db.execute(
             select(ChatSession)
             .options(selectinload(ChatSession.messages))
             .where(ChatSession.id == session_id)
         )
         session = result.scalar_one_or_none()
-
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
 
-        # Convert DB messages to dict format for LLM
         previous_messages = [
             {"role": msg.role, "content": msg.content}
             for msg in sorted(session.messages, key=lambda m: m.created_at)
         ]
 
-        # Step 4: Add system prompt at the start
+        # Step 4: Base system prompt
         messages_for_llm = [
             {
                 "role": "system",
                 "content": (
-                    "You are a helpful assistant that responds in a friendly, approachable, and clear style, "
-                    "similar to ChatGPT. Use GitHub-flavored markdown with headings, bullet points, and code blocks, "
-                    "but ensure your responses are well-spaced with paragraphs and line breaks to avoid congestion.\n\n"
-                    "Write your replies in natural, conversational English. Introduce concepts gently, "
-                    "explain ideas step-by-step, and use examples where helpful. "
-                    "Keep the tone warm and encouraging, like a knowledgeable peer.\n\n"
-                    "Avoid large blocks of text without breaks. Use lists or sections to organize information clearly. "
-                    "When appropriate, add friendly greetings or closing remarks to make the interaction engaging."
+                    "You are a helpful assistant that responds in a friendly, approachable, and clear style, similar to ChatGPT."
+                    "Follow these formatting rules for all responses:"
+                    "- Write all output as a single well-structured GitHub-flavored Markdown block."
+                    "- Always start with a descriptive H2 title that includes a relevant emoji."
+                    "- Include a short introductory paragraph (1–2 sentences)."
+                    "- Organize content into clearly labeled sections using H3 headings."
+                    "- Use bullet points or numbered lists for clarity when listing items."
+                    "- Provide code examples in fenced code blocks with correct syntax highlighting."
+                    "- Use **bold** for important terms and occasional emojis to enhance readability."
+                    "- For comparisons or data, use clean Markdown tables."
+                    "- Avoid repeating the same content in multiple formats—present only the polished Markdown version."
+                    "- Leave one blank line between all sections for readability."
+                    "- Explain concepts step-by-step, keeping tone friendly but professional."
+                    "- Add a brief summary or key takeaway at the end."
                 ),
-            },
+            }
         ] + previous_messages
 
-        # Step 5: Call LLM with complete conversation
+        # Step 5: Web Search Augmentation with Query Normalization
+        if getattr(payload, "web_search", False):
+            async with AsyncClient(timeout=None) as client:
+                normalization_prompt = f"""
+                    Given the conversation so far and the user's latest question, rewrite the question
+                    into a highly specific, search-engine-friendly query. Preserve the intent but make it explicit.
+
+                    Conversation Context:
+                    {[m['content'] for m in previous_messages]}
+
+                    Latest Question:
+                    "{user_message}"
+
+                    Output only the rewritten query, no extra words.no model name.
+                    """
+                normalized_query = await get_model_response(
+                    [{"role": "user", "content": normalization_prompt}],
+                    payload.model,
+                    db,
+                    client,
+                )
+            normalized_query = normalized_query[0]
+            print(f"🔍 Normalized Search Query: {normalized_query}")
+
+            # Step 5b: Call the search API with the normalized query
+            search_results = await web_search_serper(normalized_query)
+
+            # Step 5c: Inject search results into the LLM context
+            augmented_prompt = build_search_augmented_prompt(
+                normalized_query, search_results
+            )
+            messages_for_llm.append({"role": "system", "content": augmented_prompt})
+
+        # Step 6: Get final LLM response
+        # Step 6: Get LLM response
         async with AsyncClient(timeout=None) as client:
-            print("DEBUG call:", payload.model)
-            reply = await get_model_response(
+            reply_text, used_model = await get_model_response(
                 messages_for_llm, payload.model, db, client
             )
 
-        # Step 6: Save assistant's response
+        # Step 7: Save assistant's response
         await save_message(
             db=db,
             user_id=user.id,
             session_id=session_id,
             role="assistant",
-            content=reply,
+            content=reply_text,
+            res_model=used_model,
         )
 
         print("✅ Sending Response")
-        return JSONResponse(content={"response": reply, "session_id": str(session_id)})
+        return JSONResponse(
+            content={
+                "response": reply_text,
+                "model": used_model,
+                "session_id": str(session_id),
+            }
+        )
 
     except Exception as e:
         print("❌ Exception occurred during /chat:")
@@ -268,7 +315,6 @@ async def get_session_messages(session_id: UUID, db: AsyncSession = Depends(get_
 
     # 🔹 Replace with sorted list so response_model gets them in order
     session.messages = sorted_messages
-
     return session
 
 
