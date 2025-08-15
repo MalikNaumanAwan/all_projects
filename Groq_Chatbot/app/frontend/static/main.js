@@ -9,7 +9,7 @@ const API_BASE = "http://localhost:2000"; // Adjust to your backend
 const form = document.getElementById("chat-form");
 const input = document.getElementById("user-input");
 const chatBox = document.getElementById("chat-box");
-
+const placeholder = document.getElementById("placeholder-message");
 // Event listeners
 window.addEventListener("DOMContentLoaded", async () => {
   await loadProfile();
@@ -26,7 +26,10 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = input.value.trim();
   if (!text) return;
-
+  // Hide placeholder when the first message is sent
+  if (placeholder) {
+    placeholder.style.display = "none";
+  }
   // Render user bubble
   createBubble("user", text);
   input.value = "";
@@ -534,18 +537,16 @@ async function fetchAndRenderModels() {
 
 // Typing effect function
 function fakeStreamText(text, streamBubble, baseDelay = 20) {
-  const words = text.split(/(\s+)/); // Keep whitespace as tokens
-  streamBubble.setRaw("");
+  const tokens = text.split(/(\s+)/); // keep spaces
   let index = 0;
 
   function step() {
-    if (index < words.length) {
-      streamBubble.appendRaw(words[index]);
+    if (index < tokens.length) {
+      streamBubble.appendParsed(tokens[index]);
       index++;
 
-      // Adjust delay based on remaining length (faster towards the end)
-      const progress = index / words.length;
-      const dynamicDelay = baseDelay * (1 - 0.99 * progress); // Speed up 99%
+      const progress = index / tokens.length;
+      const dynamicDelay = baseDelay * (1 - 0.99 * progress);
 
       scrollToBottom();
       setTimeout(step, dynamicDelay);
@@ -630,45 +631,34 @@ function createStreamedBubble(role) {
   bubble.appendChild(typingIndicator);
   wrapper.appendChild(bubble);
 
-  // internal buffer for incremental updates
   let buffer = "";
 
   return {
     wrapper,
-    // full update (final) — parse markdown & highlight
     update(text) {
       buffer = text || "";
       typingIndicator.style.display = "none";
       contentDiv.innerHTML = marked.parse(buffer);
       try {
         if (window.hljs) hljs.highlightAll();
-      } catch (e) {
-        /* ignore */
-      }
+      } catch (e) {}
     },
-    // used to initialize raw stream text (unparsed)
-    setRaw(text) {
-      buffer = text || "";
-      contentDiv.textContent = buffer;
-    },
-    // append raw chunk during fake streaming
-    appendRaw(chunk) {
+    appendParsed(chunk) {
       buffer += chunk;
-      contentDiv.textContent = buffer;
+      contentDiv.innerHTML = marked.parse(buffer);
+      try {
+        if (window.hljs) hljs.highlightAll();
+      } catch (e) {}
     },
-    // getter for buffer (keeps backwards compatibility)
-    getText() {
-      return buffer;
-    },
-    // finalize streaming: parse markdown & highlight
     finish() {
       typingIndicator.style.display = "none";
       contentDiv.innerHTML = marked.parse(buffer);
       try {
         if (window.hljs) hljs.highlightAll();
-      } catch (e) {
-        /* ignore */
-      }
+      } catch (e) {}
+    },
+    getText() {
+      return buffer;
     },
   };
 }

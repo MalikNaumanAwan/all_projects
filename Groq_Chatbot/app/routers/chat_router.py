@@ -94,7 +94,66 @@ async def chat_without_tts(
             await db.refresh(new_session)
             session_id = new_session.id
             print("💡 New session created:", session_id)
+            # 🔹 Generate a title using the LLM
+            async with AsyncClient(timeout=None) as client:
+                title_prompt = f"""
+                Create a short, descriptive chat title (max 6 words) for this user query:
+                "{payload.messages[-1].content}"
 
+                Rules:
+                - No quotes or punctuation at the end
+                - Capture the core topic clearly
+                - Capitalize each major word
+                - Do not include the words 'Title' or 'Chat'
+                - Output only the title
+                """
+                generated_title, _ = await get_model_response(
+                    [{"role": "user", "content": title_prompt}],
+                    payload.model,
+                    db,
+                    client,
+                )
+
+            # Save title in DB
+            new_session.title = generated_title.strip()
+            await db.commit()
+            print(f"📝 Session title set: {new_session.title}")
+        else:
+            # Fetch existing session
+            result = await db.execute(
+                select(ChatSession).where(ChatSession.id == session_id)
+            )
+            existing_session = result.scalar_one_or_none()
+            if not existing_session:
+                raise HTTPException(status_code=404, detail="Session not found")
+
+            # Increment some counter if you have one (example)
+            # existing_session.message_count += 1
+
+            # If title is still default, update it based on latest query
+            if existing_session.title.strip().lower() == "new chat session":
+                async with AsyncClient(timeout=None) as client:
+                    title_prompt = f"""
+                    Create a short, descriptive chat title (max 6 words) for this user query:
+                    "{payload.messages[-1].content}"
+
+                    Rules:
+                    - No quotes or punctuation at the end
+                    - Capture the core topic clearly
+                    - Capitalize each major word
+                    - Do not include the words 'Title' or 'Chat'
+                    - Output only the title
+                    """
+                    generated_title, _ = await get_model_response(
+                        [{"role": "user", "content": title_prompt}],
+                        payload.model,
+                        db,
+                        client,
+                    )
+
+                existing_session.title = generated_title.strip()
+                await db.commit()
+                print(f"📝 Session title updated: {existing_session.title}")
         print("📨 Message received:", user_message)
         print("👤 User ID:", user.id, "| 💬 Session ID:", session_id)
         print("🌐 Web Search Enabled:", getattr(payload, "web_search", False))

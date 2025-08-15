@@ -103,8 +103,14 @@
           <!-- Chat messages scroll area -->
           <div
             id="chat-box"
-            class="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-6xl mx-auto w-full"
+            class="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-6xl mx-auto w-full relative"
           >
+            <div
+              id="placeholder-message"
+              class="absolute inset-0 flex items-center justify-center text-gray-400 text-2xl font-semibold select-none"
+            >
+              Start a conversation...
+            </div>
             <!-- messages inserted dynamically -->
           </div>
 
