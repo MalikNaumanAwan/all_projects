@@ -38,6 +38,10 @@ class AIModel(Base):
     model_id: Mapped[str] = mapped_column(
         String(255), nullable=False, unique=True
     )  # API model identifier
+    category: Mapped[str] = mapped_column(
+        String(255), nullable=False
+    )  # API model identifier
+    rating: Mapped[int] = mapped_column(nullable=False)  # API model identifier
 
 
 class UserApiKey(Base):

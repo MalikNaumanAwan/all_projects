@@ -116,7 +116,10 @@ class AIModelCreate(AIModelBase):
 
 class AIModelRead(AIModelBase):
     id: int
-
+    provider: str
+    model_id: str
+    category: str
+    rating: int
     model_config = {
         "from_attributes": True  # Enables reading directly from SQLAlchemy objects
     }

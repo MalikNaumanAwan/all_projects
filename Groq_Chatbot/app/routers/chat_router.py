@@ -201,7 +201,7 @@ async def chat_without_tts(
                     "- Avoid repeating the same content in multiple formats—present only the polished Markdown version."
                     "- Leave one blank line between all sections for readability."
                     "- Explain concepts step-by-step, keeping tone friendly but professional."
-                    "- Add a brief summary or key takeaway at the end."
+                    "- Add a brief summary(if required) or key takeaway(if required) at the end."
                 ),
             }
         ] + previous_messages
