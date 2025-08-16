@@ -117,10 +117,12 @@
           <!-- Chat input -->
           <form
             id="chat-form"
-            class="flex gap-4 p-4 bg-gray-800 border-t border-gray-700 max-w-5xl shrink-0 items-center"
+            class="flex gap-4 p-4 bg-transparent border-t border-gray-700 max-w-5xl items-start pb-8"
           >
             <!-- Web Search Toggle -->
-            <label class="flex items-center gap-2 text-gray-300 text-sm">
+            <label
+              class="self-end flex items-center gap-2 text-gray-300 text-sm pb-3"
+            >
               <input
                 type="checkbox"
                 id="web-search-toggle"
@@ -128,17 +130,17 @@
               />
               Web Search
             </label>
-            <input
-              type="text"
+
+            <textarea
               id="user-input"
-              class="flex-1 border border-gray-600 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows="1"
+              class="flex-1 min-h-[2.5rem] max-h-[24rem] resize-none border border-gray-600 bg-gray-700 text-white rounded-3xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed"
               placeholder="Type your message..."
-              autocomplete="off"
-            />
+            ></textarea>
 
             <button
               type="submit"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow"
+              class="self-end bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow"
             >
               Send
             </button>
@@ -223,7 +225,6 @@
       </div>
     </div>
 
-    <script src="/static/main.js" defer></script>
     <div
       id="api-key-modal"
       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden"
@@ -292,15 +293,20 @@
         </div>
       </div>
     </div>
+    <script src="/static/main.js" defer></script>
   </body>
   <style>
     body {
       transform: scale(0.85);
       transform-origin: top left;
-      /* Prevent scrollbars due to scaling */
-      width: 117.65%; /* 1 / 0.8 = 1.25 */
+      width: 117.65%;
       height: 117.65%;
     }
+    #user-input {
+      max-height: 9rem; /* ~6 lines */
+      overflow-y: auto;
+    }
+
     input:-webkit-autofill {
       -webkit-box-shadow: 0 0 0 1000px #1f2937 inset !important;
       -webkit-text-fill-color: #fff !important;

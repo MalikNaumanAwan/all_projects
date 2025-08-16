@@ -109,7 +109,7 @@ async def chat_without_tts(
                 """
                 generated_title, _ = await get_model_response(
                     [{"role": "user", "content": title_prompt}],
-                    payload.model,
+                    "openai/gpt-oss-20b",
                     db,
                     client,
                 )
@@ -146,7 +146,7 @@ async def chat_without_tts(
                     """
                     generated_title, _ = await get_model_response(
                         [{"role": "user", "content": title_prompt}],
-                        payload.model,
+                        "openai/gpt-oss-20b",
                         db,
                         client,
                     )
@@ -223,7 +223,7 @@ async def chat_without_tts(
                     """
                 normalized_query = await get_model_response(
                     [{"role": "user", "content": normalization_prompt}],
-                    payload.model,
+                    "openai/gpt-oss-20b",
                     db,
                     client,
                 )

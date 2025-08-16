@@ -10,6 +10,7 @@ const form = document.getElementById("chat-form");
 const input = document.getElementById("user-input");
 const chatBox = document.getElementById("chat-box");
 const placeholder = document.getElementById("placeholder-message");
+const ta = document.getElementById("user-input");
 // Event listeners
 window.addEventListener("DOMContentLoaded", async () => {
   await loadProfile();
@@ -21,7 +22,123 @@ document.addEventListener("DOMContentLoaded", () => {
   setupApiKeyModal();
   setupAuthModal();
 });
+//********************************************************* */
+(function attachAutoGrow() {
+  if (!ta) {
+    console.error("AutoGrow: #user-input not found");
+    return;
+  }
 
+  // === Config ===
+  const MAX_PX = 288; // match Tailwind max-h-[18rem] if desired
+
+  // === Create hidden mirror sizer (resilient to transforms & flex) ===
+  const sizer = document.createElement("div");
+  sizer.setAttribute("aria-hidden", "true");
+  Object.assign(sizer.style, {
+    position: "absolute",
+    visibility: "hidden",
+    height: "auto",
+    top: "0",
+    left: "-9999px",
+    whiteSpace: "pre-wrap",
+    wordWrap: "break-word",
+    overflowWrap: "break-word",
+    boxSizing: "border-box",
+  });
+  document.body.appendChild(sizer);
+
+  // Helper: copy critical styles so measurement matches visual layout
+  function copyStyles() {
+    const cs = getComputedStyle(ta);
+    const props = [
+      "width",
+      "paddingTop",
+      "paddingRight",
+      "paddingBottom",
+      "paddingLeft",
+      "borderTopWidth",
+      "borderRightWidth",
+      "borderBottomWidth",
+      "borderLeftWidth",
+      "fontFamily",
+      "fontSize",
+      "fontWeight",
+      "fontStyle",
+      "letterSpacing",
+      "textTransform",
+      "lineHeight",
+      "textIndent",
+      "tabSize",
+      "wordSpacing",
+      "whiteSpace",
+    ];
+    props.forEach((p) => (sizer.style[p] = cs[p]));
+    // ensure sizer uses same width as textarea (account for box-sizing)
+    sizer.style.width = ta.getBoundingClientRect().width + "px";
+  }
+
+  // Resize function uses mirror to compute exact height (robust)
+  function resize() {
+    copyStyles();
+    // mirror content; add trailing newline ensures last line height counted
+    const value = ta.value || ta.placeholder || "";
+    sizer.textContent = value + "\n";
+    const needed = sizer.scrollHeight;
+
+    // apply height constrained by MAX_PX
+    ta.style.height = "auto"; // reset so scrollHeight is accurate
+    const scaleFactor = 0.85; // match your CSS transform scale
+    const newHeight = Math.min(needed / scaleFactor, MAX_PX);
+    ta.style.height = newHeight + "px";
+    ta.style.overflowY = needed > MAX_PX ? "auto" : "hidden";
+  }
+
+  // Attach events: input, paste (deferred), change, programmatic checks
+  ta.addEventListener("input", (e) => {
+    // console debug to verify attachment
+    if (window.__AUTOGROW_DEBUG) console.log("autogrow: input");
+    resize();
+  });
+
+  ta.addEventListener("change", () => resize());
+
+  ta.addEventListener("paste", () => {
+    // pasted content is applied after paste event, so defer resize
+    setTimeout(resize, 0);
+  });
+
+  // If content may be inserted programmatically, observe attribute/value changes
+  const observer = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      if (m.type === "attributes" && m.attributeName === "value") {
+        resize();
+        break;
+      }
+    }
+  });
+  observer.observe(ta, { attributes: true });
+
+  // Recompute on window resize (text wrapping changes height)
+  window.addEventListener("resize", resize);
+
+  // Initial sizing for prefilled values
+  setTimeout(resize, 0);
+
+  // Expose a manual hook if you want to trigger programmatically
+  ta.autogrowResize = resize;
+  // **Enter to submit, Shift+Enter for newline**
+  ta.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (form) form.requestSubmit();
+    }
+  });
+
+  // Debug hint
+  if (window.__AUTOGROW_DEBUG) console.log("autogrow attached to #user-input");
+})();
+//**************************************************************************** */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = input.value.trim();
@@ -30,6 +147,9 @@ form.addEventListener("submit", async (e) => {
   if (placeholder) {
     placeholder.style.display = "none";
   }
+  // Reset textarea
+  ta.value = "";
+  ta.autogrowResize(); // recompute height to minimal state
   // Render user bubble
   createBubble("user", text);
   input.value = "";
