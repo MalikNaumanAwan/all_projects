@@ -36,6 +36,7 @@ class ChatPayload(BaseModel):
     session_id: UUID | None = None
     messages: List[Message]
     model: str
+    category: str
     web_search: bool = False
 
 

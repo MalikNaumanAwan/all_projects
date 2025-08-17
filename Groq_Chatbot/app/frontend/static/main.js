@@ -46,14 +46,13 @@ form.addEventListener("submit", async (e) => {
 
   try {
     const model = document.getElementById("model-select").value;
+    const category = document.getElementById("mode-select").value;
     const token = localStorage.getItem("token");
-
     // ✅ Read web search checkbox
     const webSearch = document.getElementById("web-search-toggle").checked;
 
     const headers = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
-
     // 📨 Send chat request with web_search flag
     const response = await fetch(`${API_BASE}/chat`, {
       method: "POST",
@@ -62,6 +61,7 @@ form.addEventListener("submit", async (e) => {
         session_id: currentSessionId,
         messages: [{ role: "user", content: text }],
         model: model,
+        category: category,
         web_search: webSearch, // 👈 Added flag here
       }),
     });
@@ -451,6 +451,7 @@ async function resendMessage(text) {
 
   try {
     const model = document.getElementById("model-select").value;
+    const category = document.getElementById("mode-select").value;
     const token = localStorage.getItem("token");
     const webSearch = document.getElementById("web-search-toggle").checked;
     const headers = { "Content-Type": "application/json" };
@@ -463,6 +464,7 @@ async function resendMessage(text) {
         session_id: currentSessionId,
         messages: [{ role: "user", content: text }],
         model: model,
+        category: category,
         web_search: webSearch, // 👈 Added flag here
       }),
     });
@@ -481,7 +483,22 @@ async function resendMessage(text) {
 
     // 🧠 Merge model + response for display
     const mergedResponse = `**|\`${data.model}\`|**\n\n\n${data.response}`;
+    // 🔄 Update dropdown to reflect actual model used
+    const modelSelect = document.getElementById("model-select");
+    if (modelSelect && data.model) {
+      // If the model already exists in the dropdown → select it
+      let option = Array.from(modelSelect.options).find(
+        (opt) => opt.value === data.model
+      );
 
+      // If the model is missing → add it dynamically
+      if (!option) {
+        option = new Option(data.model, data.model, true, true);
+        modelSelect.add(option);
+      }
+
+      modelSelect.value = data.model;
+    }
     // 🧠 Update streamed bot response
     fakeStreamText(mergedResponse, streamBubble, 1);
     scrollToBottom();
@@ -502,8 +519,14 @@ async function fetchAndRenderModels() {
   }
 
   const selectEl = document.getElementById("model-select");
+  const modeEl = document.getElementById("mode-select");
+
   if (!selectEl) {
     console.error("Model select element not found in DOM.");
+    return;
+  }
+  if (!modeEl) {
+    console.error("Mode select element not found in DOM.");
     return;
   }
 
@@ -530,7 +553,10 @@ async function fetchAndRenderModels() {
       return;
     }
 
+    // 🔹 Restore last selected model + mode
     const lastSelectedModel = localStorage.getItem("selected_model_id");
+    const lastSelectedMode = localStorage.getItem("selected_mode");
+
     selectEl.innerHTML = ""; // Clear previous
 
     // 🔹 Group models by category
@@ -573,10 +599,20 @@ async function fetchAndRenderModels() {
       selectEl.appendChild(optGroup);
     });
 
+    // 🔹 Restore mode selection if saved
+    if (lastSelectedMode) {
+      modeEl.value = lastSelectedMode;
+    }
+
     // Save selection on change
     selectEl.addEventListener("change", () => {
       const selectedId = selectEl.value;
       localStorage.setItem("selected_model_id", selectedId);
+    });
+
+    modeEl.addEventListener("change", () => {
+      const selectedMode = modeEl.value;
+      localStorage.setItem("selected_mode", selectedMode);
     });
   } catch (err) {
     console.error("Error fetching models:", err);
@@ -846,3 +882,4 @@ document.addEventListener("DOMContentLoaded", fetchAndRenderModels);
   // Debug hint
   if (window.__AUTOGROW_DEBUG) console.log("autogrow attached to #user-input");
 })();
+//***************************************************************************** */

@@ -82,6 +82,7 @@ async def chat_without_tts(
 ):
     try:
         print("payload session id:", payload.session_id)
+        print("payload Category:", payload.category)
         session_id: UUID | None = payload.session_id
         user_message = payload.messages[-1].content
 
@@ -110,6 +111,7 @@ async def chat_without_tts(
                 generated_title, _ = await get_model_response(
                     [{"role": "user", "content": title_prompt}],
                     "openai/gpt-oss-20b",
+                    "text",
                     db,
                     client,
                 )
@@ -131,7 +133,7 @@ async def chat_without_tts(
             # existing_session.message_count += 1
 
             # If title is still default, update it based on latest query
-            if existing_session.title.strip().lower() == "new chat session":
+            if existing_session.title.strip().lower() == "new chat session":  # type: ignore
                 async with AsyncClient(timeout=None) as client:
                     title_prompt = f"""
                     Create a short, descriptive chat title (max 6 words) for this user query:
@@ -147,6 +149,7 @@ async def chat_without_tts(
                     generated_title, _ = await get_model_response(
                         [{"role": "user", "content": title_prompt}],
                         "openai/gpt-oss-20b",
+                        "text",
                         db,
                         client,
                     )
@@ -224,6 +227,7 @@ async def chat_without_tts(
                 normalized_query = await get_model_response(
                     [{"role": "user", "content": normalization_prompt}],
                     "openai/gpt-oss-20b",
+                    "text",
                     db,
                     client,
                 )
@@ -243,7 +247,7 @@ async def chat_without_tts(
         # Step 6: Get LLM response
         async with AsyncClient(timeout=None) as client:
             reply_text, used_model = await get_model_response(
-                messages_for_llm, payload.model, db, client
+                messages_for_llm, payload.model, payload.category, db, client
             )
 
         # Step 7: Save assistant's response
