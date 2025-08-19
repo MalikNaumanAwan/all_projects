@@ -90,6 +90,34 @@ async def chat_without_tts(
     db: AsyncSession = Depends(get_db),
 ):
     try:
+        result = await db.execute(
+            select(UserApiKey).where(UserApiKey.user_id == user.id)
+        )
+        rows = result.scalars().all()
+
+        # Option A: validate from ORM instances (recommended with from_attributes)
+        api_keys = [UserApiKeyIn.model_validate(row) for row in rows]
+        print("Keys:", api_keys)
+        if not api_keys:
+            raise HTTPException(status_code=404, detail="No Api Key")
+        groq_key: str | None = None
+        mistral_key: str | None = None
+
+        for a in api_keys:
+            if a.api_provider == "Groq":
+                groq_key = a.api_key
+            elif a.api_provider == "Mistral":
+                mistral_key = a.api_key
+
+        # Assign after loop (ensures variables exist)
+        groq_api_key = groq_key
+        mistral_api_key = mistral_key
+
+        # Optional: fail fast if keys are missing
+        if not groq_api_key and not mistral_api_key:
+            raise HTTPException(
+                status_code=404, detail="No API keys found for Groq or Mistral"
+            )
         print("payload session id:", payload.session_id)
         print("payload Category:", payload.category)
         session_id: UUID | None = payload.session_id
@@ -123,6 +151,8 @@ async def chat_without_tts(
                     "text",
                     db,
                     client,
+                    groq_api_key,
+                    mistral_api_key,
                 )
 
             # Save title in DB
@@ -154,6 +184,7 @@ async def chat_without_tts(
                     - Capitalize each major word
                     - Do not include the words 'Title' or 'Chat'
                     - Output only the title
+                    - Maximum 3 words
                     """
                     generated_title, _ = await get_model_response(
                         [{"role": "user", "content": title_prompt}],
@@ -161,6 +192,8 @@ async def chat_without_tts(
                         "text",
                         db,
                         client,
+                        groq_api_key,
+                        mistral_api_key,
                     )
 
                 existing_session.title = generated_title.strip()
@@ -239,6 +272,8 @@ async def chat_without_tts(
                     "text",
                     db,
                     client,
+                    groq_api_key,
+                    mistral_api_key,
                 )
             normalized_query = normalized_query[0]
             print(f"🔍 Normalized Search Query: {normalized_query}")
@@ -256,7 +291,13 @@ async def chat_without_tts(
         # Step 6: Get LLM response
         async with AsyncClient(timeout=None) as client:
             reply_text, used_model = await get_model_response(
-                messages_for_llm, payload.model, payload.category, db, client
+                messages_for_llm,
+                payload.model,
+                payload.category,
+                db,
+                client,
+                groq_api_key,
+                mistral_api_key,
             )
 
         # Step 7: Save assistant's response
@@ -277,7 +318,11 @@ async def chat_without_tts(
                 "session_id": str(session_id),
             }
         )
-
+    except RuntimeError as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+    except HTTPException as e:
+        # ✅ Re-raise so FastAPI handles it properly
+        raise e
     except Exception as e:
         print("❌ Exception occurred during /chat:")
         traceback.print_exc()
@@ -393,12 +438,37 @@ async def get_session_messages(session_id: UUID, db: AsyncSession = Depends(get_
 @router.get("/get_models", response_model=List[AIModelRead])
 async def get_models(
     db: AsyncSession = Depends(get_db),
-    user=Depends(get_current_user),  # ✅ Require login
+    user: User = Depends(get_current_user),
 ):
     try:
-        result = await db.execute(select(AIModel))
+        # 1. Get user API providers
+        result = await db.execute(
+            select(UserApiKey.api_provider).where(UserApiKey.user_id == user.id)
+        )
+        providers = [row[0] for row in result.all()]
+
+        if not providers:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No API keys configured. Please add at least one provider key.",
+            )
+
+        # 2. Fetch models filtered by providers AND exclude vision/audio
+        result = await db.execute(
+            select(AIModel)
+            .where(AIModel.provider.in_(providers))
+            .where(AIModel.category.notin_(["vision", "audio"]))
+        )
         models = result.scalars().all()
+
+        if not models:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No models available for your API providers (excluding vision/audio).",
+            )
+
         return models
+
     except SQLAlchemyError as e:
         print(f"❌ Database error while fetching models: {e}")
         raise HTTPException(

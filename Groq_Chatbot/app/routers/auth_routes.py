@@ -65,8 +65,8 @@ async def register(
 async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        purpose: str = payload.get("purpose")
+        user_id: str = payload.get("sub")  # type: ignore
+        purpose: str = payload.get("purpose")  # type: ignore
         if user_id is None or purpose != "verify":
             raise HTTPException(status_code=400, detail="Invalid token")
     except JWTError:

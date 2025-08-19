@@ -45,7 +45,7 @@ class AIModel(Base):
     rating: Mapped[int] = mapped_column(nullable=False)
     total_requests: Mapped[int] = mapped_column(nullable=True)
     total_response_time: Mapped[float] = mapped_column(nullable=True)
-    average_response_time: Mapped[float] = mapped_column(nullable=True)
+    average_response_time: Mapped[float] = mapped_column(nullable=True, default=0.0)
 
 
 class UserApiKey(Base):

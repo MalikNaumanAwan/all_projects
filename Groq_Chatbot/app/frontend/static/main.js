@@ -3,8 +3,8 @@ let currentUserId = null; // 🔐 Global user ID
 let currentSessionId = localStorage.getItem("chat_session_id") || null;
 let chatSessions = [];
 let isLogin = true;
-const API_BASE = "http://192.168.100.4:2022"; // Adjust to your backend
-
+//const API_BASE = "http://192.168.100.4:2022"; // Adjust to your backend
+const API_BASE = "http://localhost:2000"; // Adjust to your backend
 // DOM elements
 const form = document.getElementById("chat-form");
 const input = document.getElementById("user-input");
@@ -27,13 +27,16 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = input.value.trim();
   if (!text) return;
+
   // Hide placeholder when the first message is sent
   if (placeholder) {
     placeholder.style.display = "none";
   }
+
   // Reset textarea
   ta.value = "";
   ta.autogrowResize(); // recompute height to minimal state
+
   // Render user bubble
   createBubble("user", text);
   input.value = "";
@@ -48,12 +51,11 @@ form.addEventListener("submit", async (e) => {
     const model = document.getElementById("model-select").value;
     const category = document.getElementById("mode-select").value;
     const token = localStorage.getItem("token");
-    // ✅ Read web search checkbox
     const webSearch = document.getElementById("web-search-toggle").checked;
 
     const headers = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
-    // 📨 Send chat request with web_search flag
+
     const response = await fetch(`${API_BASE}/chat`, {
       method: "POST",
       headers,
@@ -62,13 +64,27 @@ form.addEventListener("submit", async (e) => {
         messages: [{ role: "user", content: text }],
         model: model,
         category: category,
-        web_search: webSearch, // 👈 Added flag here
+        web_search: webSearch,
       }),
     });
-    // 🔍 Debug log before sending
-    console.log("🚀 Sending payload:", webSearch);
+
+    // 🔍 Handle errors properly
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      let errorMessage = "";
+      try {
+        const errData = await response.json();
+        if (errData.detail) {
+          errorMessage = errData.detail; // FastAPI's HTTPException
+        } else if (errData.error) {
+          errorMessage = errData.error; // Your custom JSONResponse
+        }
+      } catch (_) {
+        // no JSON → fallback to HTTP status
+      }
+      if (!errorMessage) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
 
     // ✅ Parse backend response
@@ -89,17 +105,13 @@ form.addEventListener("submit", async (e) => {
     // 🔄 Update dropdown to reflect actual model used
     const modelSelect = document.getElementById("model-select");
     if (modelSelect && data.model) {
-      // If the model already exists in the dropdown → select it
       let option = Array.from(modelSelect.options).find(
         (opt) => opt.value === data.model
       );
-
-      // If the model is missing → add it dynamically
       if (!option) {
         option = new Option(data.model, data.model, true, true);
         modelSelect.add(option);
       }
-
       modelSelect.value = data.model;
     }
 
@@ -115,6 +127,7 @@ form.addEventListener("submit", async (e) => {
     console.error("Chat error:", err);
   }
 });
+
 //************************************************************************ */
 // Functions
 async function setupApiKeyModal() {
@@ -470,10 +483,24 @@ async function resendMessage(text) {
       }),
     });
 
+    // 🔍 Handle errors properly
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      let errorMessage = "";
+      try {
+        const errData = await response.json();
+        if (errData.detail) {
+          errorMessage = errData.detail; // FastAPI's HTTPException
+        } else if (errData.error) {
+          errorMessage = errData.error; // Your custom JSONResponse
+        }
+      } catch (_) {
+        // no JSON → fallback to HTTP status
+      }
+      if (!errorMessage) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
-
     const data = await response.json();
     if (data.session_id && data.session_id !== currentSessionId) {
       currentSessionId = data.session_id;
@@ -710,36 +737,67 @@ function createStreamedBubble(role) {
   contentWrapper.className = "content-wrapper";
   contentWrapper.appendChild(contentDiv);
 
+  // ✅ Wrap thinking text + dots in a single flex row
+  const thinkingWrapper = document.createElement("div");
+  thinkingWrapper.className = "flex items-center space-x-2 overflow-x-hidden";
+
+  const thinkingText = document.createElement("span");
+  thinkingText.className = "thinking-text italic text-gray-600";
+  thinkingText.textContent = role === "bot" ? "Thinking" : "";
+
   const typingIndicator = document.createElement("div");
-  typingIndicator.className = "typing-indicator";
+  typingIndicator.className = "typing-indicator flex space-x-1";
   typingIndicator.innerHTML = "<span></span><span></span><span></span>";
 
+  // only show for bot role
+  if (role === "bot") {
+    thinkingWrapper.appendChild(thinkingText);
+    thinkingWrapper.appendChild(typingIndicator);
+    contentDiv.appendChild(thinkingWrapper);
+  }
+
   bubble.appendChild(contentWrapper);
-  bubble.appendChild(typingIndicator);
   wrapper.appendChild(bubble);
 
   let buffer = "";
+  let thinkingTimeout;
+
+  // ✅ Switch text after 5s if still no response
+  if (role === "bot") {
+    thinkingTimeout = setTimeout(() => {
+      if (!buffer) {
+        thinkingText.textContent = "Thinking longer for better response";
+      }
+    }, 5000);
+  }
 
   return {
     wrapper,
     update(text) {
       buffer = text || "";
       typingIndicator.style.display = "none";
+      thinkingText.style.display = "none"; // ✅ hide placeholder
       contentDiv.innerHTML = marked.parse(buffer);
+      clearTimeout(thinkingTimeout);
       try {
         if (window.hljs) hljs.highlightAll();
       } catch (e) {}
     },
     appendParsed(chunk) {
       buffer += chunk;
+      typingIndicator.style.display = "none";
+      thinkingText.style.display = "none";
       contentDiv.innerHTML = marked.parse(buffer);
+      clearTimeout(thinkingTimeout);
       try {
         if (window.hljs) hljs.highlightAll();
       } catch (e) {}
     },
     finish() {
       typingIndicator.style.display = "none";
+      thinkingText.style.display = "none";
       contentDiv.innerHTML = marked.parse(buffer);
+      clearTimeout(thinkingTimeout);
       try {
         if (window.hljs) hljs.highlightAll();
       } catch (e) {}
@@ -994,3 +1052,96 @@ function attachDeleteHandlers() {
     });
   });
 }
+//****************************************************************************** */
+/* ===================== AUTH GATE + BLUR ON FIRST LOAD ===================== */
+/* Purpose: If no JWT token exists at page load, force-open the auth modal,
+   blur the background, and block interactions behind the modal. On login,
+   cleanly remove the overlay and restore scrolling. */
+
+(function enforceAuthGateOnLoad() {
+  // Run after DOM is ready
+  document.addEventListener("DOMContentLoaded", () => {
+    const authModal = document.getElementById("auth-modal");
+    if (!authModal) return;
+
+    // --- Overlay factory (backdrop blur + click shield) ---
+    function ensureOverlay() {
+      let overlay = document.getElementById("auth-blur-overlay");
+      if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "auth-blur-overlay";
+        overlay.setAttribute("aria-hidden", "true");
+        Object.assign(overlay.style, {
+          position: "fixed",
+          inset: "0",
+          background: "rgba(0,0,0,0.45)",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+          zIndex: "40", // modal should sit above (z-50)
+          pointerEvents: "auto",
+        });
+        // Block all clicks from reaching the page behind
+        overlay.addEventListener("click", (e) => e.stopPropagation(), true);
+        document.body.appendChild(overlay);
+      }
+      return overlay;
+    }
+
+    function addHardDismissGuard() {
+      // Stop the existing backdrop-to-close handler when unauthenticated
+      authModal.addEventListener(
+        "click",
+        (e) => {
+          const unauth = !localStorage.getItem("token");
+          if (unauth && e.target === authModal) {
+            // prevent the earlier listener in setupAuthModal() from firing
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        },
+        true // capture to win the event race
+      );
+    }
+
+    // Preserve original show/hide (if defined), then augment with overlay mgmt
+    const _origShow =
+      window.showAuthModal || (() => authModal.classList.remove("hidden"));
+    const _origHide =
+      window.hideAuthModal || (() => authModal.classList.add("hidden"));
+
+    window.showAuthModal = function () {
+      ensureOverlay();
+      document.body.style.overflow = "hidden"; // lock scroll
+      authModal.style.zIndex = "50";
+      _origShow();
+    };
+
+    window.hideAuthModal = function () {
+      _origHide();
+      const overlay = document.getElementById("auth-blur-overlay");
+      if (overlay) overlay.remove();
+      document.body.style.overflow = ""; // restore scroll
+    };
+
+    addHardDismissGuard();
+
+    // Gate on first paint
+    if (!localStorage.getItem("token")) {
+      window.showAuthModal();
+    }
+  });
+
+  // Safety net: if token appears (e.g., set from another tab), tear down overlay
+  window.addEventListener("storage", (e) => {
+    if (e.key === "token" && e.newValue) {
+      const overlay = document.getElementById("auth-blur-overlay");
+      if (overlay) overlay.remove();
+      document.body.style.overflow = "";
+      // If your app wants, you can also close the modal:
+      const authModal = document.getElementById("auth-modal");
+      if (authModal && !authModal.classList.contains("hidden")) {
+        if (typeof window.hideAuthModal === "function") window.hideAuthModal();
+      }
+    }
+  });
+})();
