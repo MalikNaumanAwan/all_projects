@@ -145,7 +145,10 @@ async def get_model_response(
     # ---------------------------------------------------------------------
     # CASE 1: Requested model's category matches the requested category
     # ---------------------------------------------------------------------
-    if requested_category == category.lower():
+
+    if requested_category == category.lower() or (
+        category.lower() == "text" and requested_category == "multimodal"
+    ):
         try:
             raw, used_model = await try_model(model, requested_provider)
             messages.append({"role": "assistant", "content": raw})
@@ -158,7 +161,6 @@ async def get_model_response(
             f"⚠️ Requested model {model} belongs to category '{requested_category}', "
             f"but user requested category '{category}'. Skipping to category-based selection."
         )
-
     # ---------------------------------------------------------------------
     # CASE 2: Fallback — pick best model in requested category
     # ---------------------------------------------------------------------

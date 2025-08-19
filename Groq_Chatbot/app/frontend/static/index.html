@@ -87,17 +87,22 @@
       <aside
         class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0 overflow-y-auto"
       >
-        <div
-          class="p-4 border-b border-gray-700 flex justify-between items-center"
-        >
-          <!-- New Groq API Key button -->
+        <!-- API Keys Section -->
+        <div class="p-4 border-b border-gray-700">
           <button
             id="api-key-btn"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm mt-2"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm mb-3"
           >
             Add API Key
           </button>
+
+          <!-- Render API Keys Here -->
+          <div id="api-container" class="space-y-2">
+            <!-- JS will populate API keys here -->
+          </div>
         </div>
+
+        <!-- Chats Section -->
         <div
           class="p-4 border-b border-gray-700 flex justify-between items-center"
         >
@@ -109,6 +114,7 @@
             + New
           </button>
         </div>
+
         <div id="chat-sessions" class="flex-1 p-2 space-y-2">
           <!-- Chats will be populated here -->
         </div>

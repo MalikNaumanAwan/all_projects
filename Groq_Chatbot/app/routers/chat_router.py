@@ -18,12 +18,13 @@ from app.auth.schemas import (
     ChatSessionWithMessages,
     UserApiKeyIn,
     AIModelRead,
+    UserApiKeyOut,
 )
 from app.services.web_search import web_search_serper, build_search_augmented_prompt
 from app.db.crud import save_message
 from app.db.dependencies import get_db
 from app.groq_client import get_model_response
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.auth.schemas import ChatMessageOut, ChatSessionDetail, UserChatHistory
 
@@ -36,6 +37,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # 🔍 now locate frontend/static under app/
 STATIC_DIR = BASE_DIR / "frontend" / "static"
 INDEX_PATH = STATIC_DIR / "index.html"
+OCR_PATH = STATIC_DIR / "testocr.html"
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -43,6 +45,13 @@ async def index():
     if not INDEX_PATH.exists():
         raise RuntimeError(f"index.html not found at: {INDEX_PATH}")
     return INDEX_PATH.read_text(encoding="utf-8")
+
+
+@router.get("/testocr", response_class=HTMLResponse)
+async def testocr():
+    if not OCR_PATH.exists():
+        raise RuntimeError(f"index.html not found at: {OCR_PATH}")
+    return OCR_PATH.read_text(encoding="utf-8")
 
 
 @router.post("/save_api_key")
@@ -402,3 +411,96 @@ async def get_models(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred.",
         ) from e
+
+
+@router.get("/get_api_keys", response_model=UserApiKeyOut)
+async def return_api_keys(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(UserApiKey).where(UserApiKey.user_id == user.id))
+    rows = result.scalars().all()
+
+    # Option A: validate from ORM instances (recommended with from_attributes)
+    api_keys = [UserApiKeyIn.model_validate(row) for row in rows]
+
+    # Option B: explicit construction (works without from_attributes)
+    # api_keys = [UserApiKeyIn(api_provider=row.api_provider, api_key=row.api_key) for row in rows]
+
+    return UserApiKeyOut(api_keys=api_keys)
+
+
+@router.delete("/delete_api_key")
+async def delete_api_key(
+    api_key: dict,  # incoming JSON { "api_key": "<value>" }
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    key_val = api_key.get("api_key")
+    if not key_val:
+        raise HTTPException(status_code=400, detail="API key value is required")
+
+    # Delete only if the key belongs to the current user
+    stmt = (
+        delete(UserApiKey)
+        .where(UserApiKey.user_id == user.id)
+        .where(UserApiKey.api_key == key_val)
+    )
+    result = await db.execute(stmt)
+    await db.commit()
+
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="API key not found")
+
+    return {"detail": "API key deleted successfully"}
+
+
+""" from fastapi import APIRouter, UploadFile, File
+import httpx
+import base64
+import mimetypes
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+MISTRAL_URL = "https://api.mistral.ai/v1/ocr"
+
+
+def load_image_file(file: UploadFile):
+    mime_type, _ = mimetypes.guess_type(file.filename)
+    content = file.file.read()
+    encoded = base64.b64encode(content).decode("utf-8")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+@router.post("/chat/ocr")
+async def chat_ocr(file: UploadFile = File(...)):
+    try:
+        base64_url = load_image_file(file)
+
+        payload = {
+            "model": "mistral-ocr-latest",
+            "document": {"type": "image_url", "image_url": base64_url},
+        }
+
+        async with httpx.AsyncClient(timeout=None) as client:
+            resp = await client.post(
+                MISTRAL_URL,
+                headers={
+                    "Authorization": f"Bearer {MISTRAL_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
+
+        resp.raise_for_status()
+        result = resp.json()
+        extracted_text = result.get("text", "")
+        return JSONResponse({"text": extracted_text})
+
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        return JSONResponse({"error": str(e)}, status_code=500) """

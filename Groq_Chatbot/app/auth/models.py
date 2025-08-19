@@ -1,5 +1,5 @@
 from typing import Optional, List
-from sqlalchemy import String, DateTime, ForeignKey, Text
+from sqlalchemy import Boolean, String, DateTime, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from datetime import datetime
@@ -26,6 +26,7 @@ class User(Base):
     chat_sessions: Mapped[List["ChatSession"]] = relationship(
         "ChatSession", back_populates="user"
     )
+    is_verified = mapped_column(Boolean, default=False)
 
 
 class AIModel(Base):

@@ -31,6 +31,12 @@ class UserApiKeyIn(BaseModel):
     api_provider: str
     api_key: str
 
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserApiKeyOut(BaseModel):
+    api_keys: List[UserApiKeyIn]
+
 
 class ChatPayload(BaseModel):
     session_id: UUID | None = None

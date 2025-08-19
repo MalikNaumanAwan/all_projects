@@ -3,7 +3,7 @@ let currentUserId = null; // 🔐 Global user ID
 let currentSessionId = localStorage.getItem("chat_session_id") || null;
 let chatSessions = [];
 let isLogin = true;
-const API_BASE = "http://localhost:2000"; // Adjust to your backend
+const API_BASE = "http://192.168.100.4:2022"; // Adjust to your backend
 
 // DOM elements
 const form = document.getElementById("chat-form");
@@ -117,7 +117,7 @@ form.addEventListener("submit", async (e) => {
 });
 //************************************************************************ */
 // Functions
-function setupApiKeyModal() {
+async function setupApiKeyModal() {
   const apiKeyBtn = document.getElementById("api-key-btn");
   const apiKeyModal = document.getElementById("api-key-modal");
   const cancelApiKeyButtons = document.querySelectorAll("#cancel-api-key");
@@ -164,13 +164,13 @@ function setupApiKeyModal() {
 
         apiKeyModal.classList.add("hidden");
         alert("API key saved successfully.");
+        location.reload();
       } catch (error) {
         alert("Network error while saving API key.");
         console.error(error);
       }
     });
   }
-
   apiKeyModal.addEventListener("click", (e) => {
     if (e.target === apiKeyModal) {
       apiKeyModal.classList.add("hidden");
@@ -216,11 +216,12 @@ async function submitAuth() {
   if (isLogin) {
     localStorage.setItem("token", data.access_token);
     hideAuthModal();
+    location.reload();
     await loadProfile();
     await fetchAndRenderSessions(true);
     await fetchAndRenderModels(); // ⬅ fetch models right after login
   } else {
-    alert("Registration successful. You may now login.");
+    alert("Registration successful. Verification Link Sent to Email.");
     isLogin = true;
     document.getElementById("auth-title").innerText = "Login";
     document.getElementById("auth-toggle").innerText = "No account? Register";
@@ -883,3 +884,113 @@ document.addEventListener("DOMContentLoaded", fetchAndRenderModels);
   if (window.__AUTOGROW_DEBUG) console.log("autogrow attached to #user-input");
 })();
 //***************************************************************************** */
+document.addEventListener("DOMContentLoaded", async () => {
+  const apiContainer = document.getElementById("api-container");
+  const token = localStorage.getItem("token");
+
+  async function loadApiKeys() {
+    try {
+      const response = await fetch(`${API_BASE}/get_api_keys`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch API keys");
+      }
+
+      const data = await response.json(); // { api_keys: [...] }
+      const keys = Array.isArray(data?.api_keys) ? data.api_keys : [];
+
+      apiContainer.innerHTML = ""; // clear old entries
+
+      if (keys.length === 0) {
+        apiContainer.innerHTML = `<p class="text-gray-400 text-sm">No API keys found</p>`;
+        return;
+      }
+
+      keys.forEach((keyObj) => {
+        const div = document.createElement("div");
+        div.className =
+          "flex items-center justify-between bg-gray-800 text-white px-3 py-2 rounded-md mb-2";
+
+        // Optional masking
+        const raw = keyObj.api_key ?? "";
+        const masked =
+          raw.length > 8 ? `${raw.slice(0, 4)}…${raw.slice(-4)}` : raw;
+
+        div.innerHTML = `
+          <span class="truncate">${keyObj.api_provider} — ${masked}</span>
+          <button
+            id="delete-btn-${keyObj.api_provider}"
+            value="${keyObj.api_key}"
+            class="ml-2 text-red-400 hover:text-red-600 text-sm"
+            data-provider="${keyObj.api_provider}">
+            Delete
+          </button>
+        `;
+
+        apiContainer.appendChild(div);
+      });
+      attachDeleteHandlers();
+    } catch (err) {
+      console.error("⚠️ Error loading API keys:", err);
+      apiContainer.innerHTML = `<p class="text-red-500 text-sm">Error loading keys</p>`;
+    }
+  }
+
+  // Load immediately when page is ready
+  await loadApiKeys();
+
+  // Optional: re-fetch after "Add API Key" is clicked
+  /* const addBtn = document.getElementById("api-key-btn");
+  if (addBtn) {
+    addBtn.addEventListener("click", async () => {
+      // After adding a key elsewhere, refresh the list:
+      await loadApiKeys();
+    });
+  } */
+});
+//**********************************DELETE API KEY***************************************** */
+// Attach once after rendering all buttons
+function attachDeleteHandlers() {
+  document.querySelectorAll("button[id^='delete-btn-']").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const token = localStorage.getItem("token");
+      const provider = btn.dataset.provider;
+      const keyVal = btn.value;
+      console.log(keyVal);
+      if (!provider) {
+        console.error("No provider found for delete");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/delete_api_key`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ api_key: keyVal }), // optional, if backend requires
+        });
+
+        if (response.ok) {
+          console.log(`Key deleted successfully`);
+          location.reload();
+          // Remove element from UI
+          btn.parentElement.remove();
+        } else {
+          const err = await response.json();
+          console.error("Failed to delete key:", err);
+          alert("Error deleting API key");
+        }
+      } catch (err) {
+        console.error("Request error:", err);
+      }
+    });
+  });
+}
